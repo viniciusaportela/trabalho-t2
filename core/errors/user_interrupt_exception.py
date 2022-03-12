@@ -1,2 +1,0 @@
-class UserInterrupt(Exception):
-    pass

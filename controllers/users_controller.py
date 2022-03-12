@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta
+from core.errors.already_exists_exception import AlreadyExistsException
+from core.errors.not_exists_exception import NotExistsException
+from core.errors.user_exit_exception import UserExitException
+from core.persistance.participant_store import ParticipantStore
 from views.user_view import UserView
 from models.participant_model import Participant
 
@@ -8,29 +12,29 @@ class UsersController:
         self.__users = []
         self.__controllers_manager = controllers_manager
         self.view = UserView()
+        self.store = ParticipantStore()
 
     def get_users(self):
-        return self.__users
+        return self.store.list()
 
     def get_user_by_cpf(self, cpf):
-        for index, user in enumerate(self.__users):
-            if user.cpf == cpf:
-                return user, index
-        return None, -1
+        return self.store.get(cpf)
 
-    def add_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines = None, has_covid = None, pcr_exam_date = None):
-        already_has_user, _ = self.get_user_by_cpf(cpf)
+    def add_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
+        already_has_user = self.get_user_by_cpf(cpf)
 
         if (already_has_user):
-            return False, 'Esse usuario ja existe!'
+            raise(AlreadyExistsException('participante'))
 
-        user = Participant(cpf, name, birthday, cep, street, number, complement, has_two_vaccines, has_covid, pcr_exam_date)
-        self.__users.append(user)
-
-        return True, ''
+        user = Participant(cpf, name, birthday, cep, street, number,
+                           complement, has_two_vaccines, has_covid, pcr_exam_date)
+        self.store.add(user)
 
     def edit_user(self, cpf, name, birthday, cep, street, number, complement):
-        user, _ = self.get_user_by_cpf(cpf)
+        user = self.get_user_by_cpf(cpf)
+
+        if (not user):
+            raise(NotExistsException('participante'))
 
         user.name = name
         user.birthday = birthday
@@ -39,10 +43,10 @@ class UsersController:
         user.address.number = number
         user.address.complement = complement
 
+        self.store.update(cpf, user)
+
     def remove_user(self, cpf):
-        for index, user in enumerate(self.__users):
-            if (user.cpf == cpf):
-                self.__users.pop(index)
+        self.store.remove(cpf)
 
     def set_covid_status(self, cpf, has_two_vaccines, has_covid, pcr_exam_date):
         user, index = self.get_user_by_cpf(cpf)
@@ -54,58 +58,47 @@ class UsersController:
         self.__users[index] = user
 
     def open_user_menu(self):
-        bindings = {
-            1: self.open_register_user,
-            2: self.open_register_participant,
-            3: self.open_edit_user,
-            4: self.open_remove_user,
-            5: self.open_user_list,
-            6: self.open_find_user
-        }
+        try:
+            bindings = {
+                'register_user': self.open_register_user,
+                'edit_user': self.open_edit_user,
+                'remove_user': self.open_remove_user,
+                'list_users': self.open_user_list,
+                'find_user': self.open_find_user
+            }
 
-        option = None
-        while option != 0:
             option = self.view.open_users_menu()
-
-            if (option == 0):
-                return
-
             bindings[option]()
+        except UserExitException:
+            return
 
     def open_register_user(self):
-        user_data = self.view.show_register_user()
+        try:
+            user_data = self.view.show_user_register()
 
-        already_has_user, _ = self.get_user_by_cpf(user_data['cpf'])
-        if (already_has_user != None):
-            print('Esse CPF ja foi cadastrado!')
+            already_has_user, _ = self.get_user_by_cpf(user_data['cpf'])
+            if (already_has_user != None):
+                self.view.show_message('Esse CPF ja foi cadastrado!')
+                return
+
+            address_data = self.__controllers_manager.address.view.show_register_address()
+
+            self.add_user(
+                user_data["cpf"],
+                user_data["name"],
+                user_data["birthday"],
+                address_data["cep"],
+                address_data["street"],
+                address_data["number"],
+                address_data["complement"],
+                user_data['has_two_vaccines'],
+                user_data['has_covid'],
+                user_data['pcr_exam_date'],
+            )
+
+            self.view.show_message('Usuario adicionado!')
+        except UserExitException:
             return
-
-        address_data = self.__controllers_manager.address.view.show_register_address()
-        participant_data = self.view.show_participant_register()
-
-        has_two_vaccines = "has_two_vaccines" in participant_data and participant_data["has_two_vaccines"]
-        has_covid = "has_covid" in participant_data and participant_data['has_covid']
-        pcr_exam_date = "pcr_exam_date" in participant_data and participant_data["pcr_exam_date"]
-
-        current = datetime.now()
-        if (current.year - user_data["birthday"].year > 150):
-            print('O usuario nao pode ter mais que 150 anos!')
-            return
-
-        self.add_user(
-            user_data["cpf"],
-            user_data["name"],
-            user_data["birthday"],
-            address_data["cep"],
-            address_data["street"],
-            address_data["number"],
-            address_data["complement"],
-            has_two_vaccines,
-            has_covid,
-            pcr_exam_date,
-        )
-
-        print('Usuario adicionado!')
 
     def open_register_participant(self):
         user = self.open_select_user()
@@ -113,7 +106,7 @@ class UsersController:
             return
 
         participant_data = self.view.show_participant_register(True)
-        
+
         self.set_covid_status(
             user.cpf,
             participant_data['has_two_vaccines'],
@@ -129,12 +122,12 @@ class UsersController:
                 return False
 
             if (user.pcr_exam.has_covid):
-                    return False
-            
+                return False
+
             final_validate = user.pcr_exam.date + timedelta(days=3)
             if event.datetime < final_validate:
                 return False
-            
+
         return True
 
     def open_edit_user(self):
@@ -142,7 +135,7 @@ class UsersController:
         if (user == None):
             return
 
-        user_data = self.view.show_register_user(True)
+        user_data = self.view.show_user_register(True)
         address_data = self.__controllers_manager.address.view.show_register_address()
         self.edit_user(
             user.cpf,
@@ -173,7 +166,7 @@ class UsersController:
         user = self.open_select_user()
         if (user == None):
             return
-        
+
         self.view.show_user_details(user)
 
     def open_select_user(self):

@@ -1,0 +1,1 @@
+DEFAULT_TITLE = 'Sistema de Controle Eventos'

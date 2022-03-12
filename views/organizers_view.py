@@ -1,5 +1,5 @@
 from datetime import datetime
-from utils.date_validator import validate_date
+from core.utils.date_validator import validate_date
 
 
 class OrganizersView:

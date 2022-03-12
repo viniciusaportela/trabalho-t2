@@ -1,9 +1,15 @@
 from datetime import datetime
-from utils.date_validator import validate_date
-from utils.recurring_ask import recurring_ask
+from core.utils.date_validator import validate_date
+from core.utils.recurring_ask import recurring_ask
 
 
 class UserView:
+    def __init__(self):
+        self.init_components()
+    
+    def init_components(self):
+        pass
+
     def open_users_menu(self):
         while True:
             print('-----------= Menu Pessoas =-----------')

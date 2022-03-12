@@ -1,4 +1,4 @@
-from utils.recurring_ask import recurring_ask
+from core.utils.recurring_ask import recurring_ask
 
 
 class AddressView:

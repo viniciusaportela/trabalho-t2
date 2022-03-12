@@ -1,6 +1,7 @@
 from datetime import datetime
 import traceback
 from controllers.controllers_manager import controllers_manager
+from core.errors.user_interrupt_exception import UserInterrupt
 from views.main_view import MainView
 
 DEBUG_MODE = True
@@ -33,13 +34,12 @@ class MainController:
                 5: controllers_manager.report.open_reports_menu,
             }
 
-            while True:
-                option = self.view.show_menu()
-
-                if (option == 0):
-                    return
-
-                bindings[option]()
+            try:
+                while True:
+                    option = self.view.show_menu()
+                    bindings[option]()
+            except UserInterrupt:
+                return
         except Exception:
             print('An unexpected error happened ...')
             if (DEBUG_MODE):

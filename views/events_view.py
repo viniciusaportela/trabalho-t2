@@ -1,5 +1,5 @@
-from utils.date_validator import validate_datetime, validate_time
-from utils.recurring_ask import recurring_ask
+from core.utils.date_validator import validate_datetime, validate_time
+from core.utils.recurring_ask import recurring_ask
 
 
 class EventsView:

@@ -10,11 +10,6 @@ class MainController:
     def __init__(self):
         self.view = MainView()
 
-    # def __inject_data(self):
-    #     controllers_manager.event.add_event('E', 25, local, '01/01/2020 17:30', [organizer])
-    #     controllers_manager.event.add_event('E2', 10, local, '22/02/2022 17:30', [organizer])
-    #     controllers_manager.event.add_event('E3', 10, local, '22/04/2022 17:30', [organizer])
-
     def run(self):
         try:
             while True:

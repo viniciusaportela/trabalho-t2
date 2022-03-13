@@ -1,9 +1,7 @@
 from datetime import datetime
-import json
 from core.constants import DEFAULT_TITLE
 from core.exceptions.user_exit_exception import UserExitException
 from core.utils.date_validator import validate_date
-from core.utils.recurring_ask import recurring_ask
 import PySimpleGUI as sg
 from views.ui_view import UIView
 
@@ -168,6 +166,17 @@ class UserView(UIView):
                 continue
 
             return values
+
+    def __mount_find_user_window(self):
+        layout = [
+            [sg.Text('Encontrar pessoa')],
+            [sg.Text('', key='error_message')],
+            [sg.Text('CPF')],
+            [sg.Input(key='cpf')],
+            [sg.Submit('Procurar'), sg.Button(
+                'Cancelar', key='exit')],
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_user_list(self, users):
         self.__mount_user_list_window(users)

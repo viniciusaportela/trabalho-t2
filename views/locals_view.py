@@ -60,21 +60,6 @@ class LocalsView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_find_user(self):
-        self.__mount_find_user_window()
-
-        while (True):
-            button, values = self.window.read()
-
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
-
-            if (values['cpf'].strip() == ''):
-                self.show_error_message('CPF não deve ser vazio')
-                continue
-
-            return values
-
     def __mount_find_local_window(self):
         layout = [
             [sg.Text('Encontrar local')],

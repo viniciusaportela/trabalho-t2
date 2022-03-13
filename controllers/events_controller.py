@@ -1,136 +1,106 @@
 from datetime import datetime as date, timedelta
+from core.persistance.event_store import EventStore
 from models.event_model import Event
 from models.participant_event_model import ParticipantEvent
 from views.events_view import EventsView
+from core.exceptions.already_exists_exception import AlreadyExistsException
+from core.exceptions.user_exit_exception import UserExitException
 
 
 class EventsController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
-        self.__events = []
         self.view = EventsView()
+        self.store = EventStore()
 
     def get_events(self):
-        return self.__events
+        return self.store.list()
 
     def get_event_by_title(self, title):
-        for index, event in enumerate(self.__events):
-            if event.title == title:
-                return event, index
-        return None, -1
+        return self.store.get(title)
 
-    def add_event(self, title, max_participants, local, datetime_str, organizers):
-        already_has_event, _ = self.get_event_by_title(title)
+    def add_event(self, title, max_participants, local, datetime, organizers):
+        already_has_event = self.get_event_by_title(title)
 
         if (already_has_event):
-            return False, 'Esse evento ja existe!'
-        
-        date_time_split = datetime_str.split(' ')
-        date_split = date_time_split[0].split('/')
-        hour_split = date_time_split[1].split(':')
+            raise AlreadyExistsException('Evento')
 
-        datetime_str = date(
-            int(date_split[2]),
-            int(date_split[1]),
-            int(date_split[0]),
-            int(hour_split[0]),
-            int(hour_split[1])
-        )
+        event = Event(title, max_participants, [],
+                      local, datetime, organizers)
 
-        event = Event(title, max_participants, [], local, datetime_str, organizers)
-
-        self.__events.append(event)
-
-        return True, ''
+        self.store.add(event)
 
     def edit_event(self, title, max_participants, participants, local, datetime, organizers):
-        event, _ = self.get_event_by_title(title)
+        event = self.get_event_by_title(title)
 
         event.max_participants = max_participants
         event.local = local
         event.participants = participants
+        event.datetime = datetime
         event.organizers = organizers
 
-        date_time_split = datetime.split(' ')
-        date_split = date_time_split[0].split('/')
-        hour_split = date_time_split[1].split(':')
-        datetime_final = date(
-            int(date_split[2]),
-            int(date_split[1]),
-            int(date_split[0]),
-            int(hour_split[0]),
-            int(hour_split[1])
-        )
-        event.datetime = datetime_final
-    
+        self.store.update(event)
+
     def remove_event(self, title):
-        _, index = self.get_event_by_title(title)
-        self.__events.pop(index)
+        self.store.remove(title)
 
     def open_events_menu(self):
-        bindings = {
-            1: self.open_register_event,
-            2: self.open_edit_event,
-            3: self.open_delete_event,
-            4: self.open_list_events,
-            5: self.open_find_event
-        }
+        try:
+            bindings = {
+                'register_event': self.open_register_event,
+                'edit_event': self.open_edit_event,
+                'remove_event': self.open_delete_event,
+                'list_events': self.open_list_events,
+                'find_event': self.open_find_event
+            }
 
-        while True:
-            option = self.view.show_events_menu()
-
-            if (option == 0):
-                return
-
-            bindings[option]()
+            while True:
+                option = self.view.show_events_menu()
+                bindings[option]()
+        except UserExitException:
+            return
 
     def open_register_event(self):
-        event_data = self.view.show_register_event()
-        print('Selecione os organizadores:')
-        organizers = self.__controllers_manager.organizer.open_select_many_organizers()
-        if (organizers == None):
+        try:
+            event_data = self.view.show_register_event()
+
+            organizers = self.__controllers_manager.organizer.open_select_many_organizers()
+
+            local = self.__controllers_manager.local.open_select_local()
+
+            self.add_event(
+                event_data['name'],
+                event_data['max_participants'],
+                local,
+                event_data['event_date'],
+                organizers
+            )
+
+            self.view.show_message('Evento adicionado!')
+        except:
+            self.view.close()
             return
-        if (len(organizers) == 0):
-            print('Voce deveria escolher ao menos um organizador!')
-            return
-
-        local = self.__controllers_manager.local.open_select_local()
-
-        self.add_event(
-            event_data['name'],
-            event_data['max_participants'],
-            local,
-            event_data['event_date'],
-            organizers
-        )
-
-        print('Evento adicionado!')
 
     def open_edit_event(self):
-        event = self.open_select_event()
-        if (event == None):
-            return
+        try:
+            event = self.open_select_event()
+            event_data = self.view.show_register_event(True)
+            organizers = self.__controllers_manager.organizer.open_select_many_organizers()
+            local = self.__controllers_manager.local.open_select_local()
 
-        event_data = self.view.show_register_event(True)
-        print('Selecione os organizadores:')
-        organizers = self.__controllers_manager.organizer.open_select_many_organizers()
-        if (organizers == None):
-            return
-        if (len(organizers) == 0):
-            print('Voce deveria escolher ao menos um organizador!')
-            return
-        local = self.__controllers_manager.local.open_select_local()
+            self.edit_event(
+                event.title,
+                event_data["max_participants"],
+                event.participants,
+                local,
+                event_data["event_date"],
+                organizers
+            )
 
-        self.edit_event(
-            event.title,
-            event_data["max_participants"],
-            event.participants,
-            local,
-            event_data["event_date"],
-            organizers
-        )
-
-        print('Evento editado!')
+            self.view.show_message('Evento editado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_add_participant_to_event(self, event):
         print('-----------= Cadastrar pessoa em evento =-----------')
@@ -165,48 +135,48 @@ class EventsController:
 
     def open_delete_event(self):
         event = self.open_select_event()
-        if (event == None):
-            return
-
         self.remove_event(event.title)
-
-        print('Evento deletado!')
+        self.view.show_message('Evento deletado!')
 
     def open_list_events(self):
         events = self.get_events()
-        self.view.show_events_list(events)
+
+        events_data = []
+        for key in events:
+            event = events[key]
+            events_data.append(event.to_raw())
+
+        self.view.show_events_list(events_data)
 
     def open_find_event(self):
         event = self.open_select_event()
-        if (event == None):
+
+        try:
+            bindings = {
+                'add_participant': self.open_add_participant_to_event,
+                'list_participants': self.open_participants_list,
+                'list_participants_with_covid_proof': self.open_participants_with_covid_proof,
+                'list_participants_without_covid_proof': self.open_participants_without_covid_proof,
+                'register_entrance': self.open_register_entrance,
+                'register_leave': self.open_register_leave
+            }
+
+            while True:
+                option = self.view.show_event_menu(event)
+                bindings[option](event)
+        except UserExitException:
+            self.view.close()
             return
 
-        bindings = {
-            1: self.open_add_participant_to_event,
-            2: self.open_participants_list,
-            3: self.open_participants_with_covid_proof,
-            4: self.open_participants_without_covid_proof,
-            5: self.open_register_entrance,
-            6: self.open_register_leave
-        }
-
-        while True:
-            option = self.view.show_event_menu(event)
-
-            if (option == 0):
-                return
-
-            bindings[option](event)
-
     def open_participants_list(self, event):
-        participants = []
+        participants_data = []
 
         for participant_assoc in event.participants:
-            participants.append(participant_assoc)
+            participants_data.append(participant_assoc.to_raw())
 
-        self.view.show_participants_list(participants)
+        self.view.show_participants_list(participants_data)
 
-    def edit_participant(self, event, participant_cpf, time_entrance = None, time_leave = None):
+    def edit_participant(self, event, participant_cpf, time_entrance=None, time_leave=None):
         for index, participant_assoc in enumerate(event.participants):
             if (participant_assoc.participant.cpf == participant_cpf):
                 if (time_entrance):
@@ -222,11 +192,13 @@ class EventsController:
             participant = participant_assoc.participant
 
             if (
-                participant.has_two_vaccines or (participant.pcr_exam.date and not participant.pcr_exam.has_covid)
+                participant.has_two_vaccines or (
+                    participant.pcr_exam.date and not participant.pcr_exam.has_covid)
             ):
                 participants_with_covid_proof.append(participant_assoc)
-        
-        self.view.show_participants_list(participants_with_covid_proof, '-----------= Participantes com comprovacao Covid =-----------')
+
+        self.view.show_participants_list(
+            participants_with_covid_proof, '-----------= Participantes com comprovacao Covid =-----------')
 
     def open_participants_without_covid_proof(self, event):
         participants = event.participants
@@ -234,38 +206,41 @@ class EventsController:
         for participant_assoc in participants:
             participant = participant_assoc.participant
             if (
-                not self.__controllers_manager.user.can_participant_event(participant, event)
+                not self.__controllers_manager.user.can_participant_event(
+                    participant, event)
             ):
                 participants_without_covid_proof.append(participant_assoc)
-        
-        self.view.show_participants_list(participants_without_covid_proof, '-----------= Participantes sem comprovacao Covid =-----------')
+
+        self.view.show_participants_list(
+            participants_without_covid_proof, '-----------= Participantes sem comprovacao Covid =-----------')
 
     def open_register_entrance(self, event):
         print('-----------= Cadastrar Entrada =-----------')
         user = self.__controllers_manager.user.open_select_user()
         if (user == None):
             return
-        
+
         user_is_in_event = self.__user_is_in_event(user, event)
 
         if (not user_is_in_event):
             print('Esse usuario nao esta cadastrado nesse evento!')
             return
-        
-        already_register_entrance = self.__already_register_hour_entrance(user, event)
+
+        already_register_entrance = self.__already_register_hour_entrance(
+            user, event)
         if (already_register_entrance):
             print('Esse usuario ja esta no evento!')
             return
-        
+
         if (not user.has_two_vaccines):
             if (user.pcr_exam.date == None):
                 print('O usuario precisa de alguma confirmacao que nao possui covid!')
                 return
 
             if (user['has_covid']):
-                    print('O usuario nao pode participar do evento com covid')
-                    return
-            
+                print('O usuario nao pode participar do evento com covid')
+                return
+
             final_validate = user['pcr_exam_date'] + timedelta(days=3)
             if event.datetime < final_validate:
                 print('A validade do exame do usuario acaba antes do evento ocorrer')
@@ -273,14 +248,16 @@ class EventsController:
 
         valid_hour = False
         while not valid_hour:
-            entrance_hour, entrance_minute = self.view.get_hour()
-            entrance_date = date(event.datetime.year, event.datetime.month, event.datetime.day, entrance_hour, entrance_minute)
+            entrance_hour, entrance_minute = self.view.show_get_hour()
+            entrance_date = date(event.datetime.year, event.datetime.month,
+                                 event.datetime.day, entrance_hour, entrance_minute)
 
             if (entrance_date >= event.datetime):
                 valid_hour = True
             else:
-                print('O horario de entrada deve ser posterior ou igual ao horario do evento')
-        
+                print(
+                    'O horario de entrada deve ser posterior ou igual ao horario do evento')
+
         self.edit_participant(event, user.cpf, entrance_date)
 
     def open_register_leave(self, event):
@@ -288,7 +265,7 @@ class EventsController:
         user = self.__controllers_manager.user.open_select_user()
         if (user == None):
             return
-        
+
         user_is_in_event = self.__user_is_in_event(user, event)
 
         if (not user_is_in_event):
@@ -299,24 +276,27 @@ class EventsController:
         if (not register_entrance):
             print('Esse usuario nao entrou no evento para sair!')
             return
-        
-        already_register_leave = self.__already_register_hour_leave(user, event)
+
+        already_register_leave = self.__already_register_hour_leave(
+            user, event)
         if (already_register_leave):
             print('Esse usuario ja saiu do evento!')
             return
-        
+
         valid_hour = False
         leave_date = None
         entrance_hour = self.__get_participant_assoc_hour_entrance(user, event)
         while not valid_hour:
-            leave_hour, leave_minute = self.view.get_hour()
-            leave_date = date(event.datetime.year, event.datetime.month, event.datetime.day, leave_hour, leave_minute)
+            leave_hour, leave_minute = self.view.show_get_hour()
+            leave_date = date(event.datetime.year, event.datetime.month,
+                              event.datetime.day, leave_hour, leave_minute)
 
             if (leave_date >= entrance_hour):
                 valid_hour = True
             else:
-                print('O horario de saida deve ser posterior ou igual o horario de entrada')
-        
+                print(
+                    'O horario de saida deve ser posterior ou igual o horario de entrada')
+
         self.edit_participant(event, user.cpf, None, leave_date)
 
     def __user_is_in_event(self, user, event):
@@ -336,7 +316,7 @@ class EventsController:
             if (participant_assoc.participant.cpf == user.cpf):
                 return bool(participant_assoc.time_entrance)
         return False
-    
+
     def __already_register_hour_leave(self, user, event):
         for participant_assoc in event.participants:
             if (participant_assoc.participant.cpf == user.cpf):
@@ -351,14 +331,12 @@ class EventsController:
 
     def open_select_event(self):
         while True:
-            event_title = self.view.show_find_event()
+            input_find = self.view.show_find_event()
+            self.view.close()
 
-            if event_title == None:
-                return
-
-            event, _ = self.get_event_by_title(event_title)
+            event = self.get_event_by_title(input_find['title'])
 
             if (event):
                 return event
             else:
-                print('Evento nao encontrado!')
+                self.view.show_message('Evento não encontrado!')

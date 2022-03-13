@@ -7,6 +7,28 @@ class Event:
         self.__datetime = datetime
         self.__organizers = organizers
 
+    def to_raw(self):
+        raw_participants = []
+
+        for participant in self.participants:
+            raw_participants.append(participant.to_raw())
+
+        organizers_str = ''
+        for index, organizer in enumerate(self.organizers):
+            organizers_str += organizer.name + '(' + organizer.cpf + ')'
+
+            if (index != len(self.organizers) - 1):
+                organizers_str += ', '
+
+        return {
+            "title": self.tittle,
+            "max_participants": self.max_participants,
+            "datetime": self.datetime,
+            "participants": raw_participants,
+            "local": self.local.to_raw(),
+            "organizers": organizers_str,
+        }
+
     @property
     def title(self):
         return self.__title
@@ -22,7 +44,7 @@ class Event:
     @max_participants.setter
     def max_participants(self, max_participants: str):
         self.__max_participants = max_participants
-    
+
     @property
     def participants(self):
         return self.__participants
@@ -30,7 +52,7 @@ class Event:
     @participants.setter
     def participants(self, participants: str):
         self.__participants = participants
-    
+
     @property
     def local(self):
         return self.__local
@@ -38,7 +60,7 @@ class Event:
     @local.setter
     def local(self, local: str):
         self.__local = local
-    
+
     @property
     def datetime(self):
         return self.__datetime

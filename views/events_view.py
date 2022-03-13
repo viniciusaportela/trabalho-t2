@@ -1,137 +1,236 @@
-from core.utils.date_validator import validate_datetime, validate_time
+from datetime import date, datetime
+from core.exceptions.user_exit_exception import UserExitException
+from core.constants import DEFAULT_TITLE
+from core.utils.date_validator import validate_date, validate_datetime, validate_time
 from core.utils.recurring_ask import recurring_ask
+from views.ui_view import UIView
+import PySimpleGUI as sg
 
 
-class EventsView:
+class EventsView(UIView):
+    def __init__(self):
+        super().__init__()
+
     def show_events_menu(self):
+        self.__mount_menu_window()
+        button, _ = self.window.read()
+        self.close()
+
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
+
+        return button
+
+    def __mount_menu_window(self):
+        self.close()
+        layout = [
+            [sg.Text('Menu Eventos')],
+            [sg.Button('Cadastrar evento', key='register_event', size=(30, None))],
+            [sg.Button('Editar evento', key='edit_event', size=(30, None))],
+            [sg.Button('Remover evento', key='remove_event', size=(30, None))],
+            [sg.Button('Listar eventos', key='list_events', size=(30, None))],
+            [sg.Button('Procurar evento', key='find_event', size=(30, None))],
+            [sg.Button('Sair', key='exit', size=(30, None))],
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def show_register_event(self, event_data=None):
+        self.__mount_register_event_window(event_data)
+
         while True:
-            print('-----------= Eventos =-----------')
-            print('1 - Cadastrar evento')
-            print('2 - Editar evento')
-            print('3 - Deletar evento')
-            print('4 - Listar eventos')
-            print('5 - Procurar evento / Manipular evento')
-            print('0 - Voltar')
+            button, values = self.window.read()
 
-            option = int(input('Selecione uma das opcoes: ').strip() or '-1')
+            if (button is None or button == 'exit'):
+                raise(UserExitException)
 
-            if (option >= 0 and option <= 5):
-                return option
-            else:
-                print('Escolha uma opcao valida!')
-
-    def show_register_event(self, edit_mode = False):
-        print('-----------= Editar Evento =-----------' if edit_mode else '-----------= Registrar Evento =-----------')
-        name = None
-        if (not edit_mode):
-            name = input('Nome: ')
-        
-        def ask_max_participants():
-            max_participants = input('Max Participantes: ')
-            if (not max_participants.isnumeric()):
-                return None
-            return int(max_participants)
-        max_participants = recurring_ask(ask_max_participants)
-        
-        def ask_datetime():
-            datetime_raw = input('Data e Hora (dia/mes/ano hora:minuto): ')
-            is_date_valid = validate_datetime(datetime_raw)
+            is_date_valid = validate_date(values['date'])
             if (not is_date_valid):
-                return None
-            return datetime_raw
-        datetime_raw = recurring_ask(ask_datetime)
+                self.show_error_message(
+                    'Formato de data invalido')
+                continue
 
-        return { "name": name, "max_participants": max_participants, "event_date": datetime_raw }
+            date_time_split = values['date'].split(' ')
+            date_split = date_time_split[0].split('/')
+            hour_split = date_time_split[1].split(':')
+            datetime_final = date(
+                int(date_split[2]),
+                int(date_split[1]),
+                int(date_split[0]),
+                int(hour_split[0]),
+                int(hour_split[1])
+            )
+            values['date'] = datetime_final
+
+            if (not values['max_participants'].isnumeric()):
+                self.show_error_message('Max Participantes deve ser numérico')
+                continue
+
+            return values
+
+    def __mount_register_event_window(self, event_data=None):
+        defaults = {}
+
+        if (event_data != None):
+            defaults = {
+                "title": event_data['title'],
+                "max_participants": event_data['max_participants'],
+                "date": event_data['date'],
+            }
+        else:
+            defaults = {
+                "title": '',
+                "max_participants": '',
+                "date": '',
+            }
+
+        layout = [
+            [sg.Text('Cadastrar Evento')],
+            [sg.Text('', key="error_message")],
+            [sg.Text('Título:')]
+            [sg.Input(defaults['title'], key="title",
+                      disabled=event_data != None)],
+            [sg.Text('Max Participantes:')],
+            [sg.Input(defaults['max_participants'], key="max_participants")],
+            [sg.Text('Data e Hora (dia/mes/ano hora:min):')],
+            [sg.Input(defaults['date'], key="date")],
+        ]
+
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_events_list(self, events):
-        print('-----------= Eventos =-----------')
+        self.__mount_events_list_window(events)
+        self.window.read()
 
-        for index, event in enumerate(events):
-            print(str(index +  1) + ' - ' + event.title + ' (' + event.local.name + ' - ' + event.datetime.strftime('%d/%m/%Y %H:%M') + ')')
-        
-        input('Aperte enter para sair... ')
+    def __mount_events_list_window(self, events):
+        values = []
+        headings = ['Nome', 'Data', 'Endereco', 'Local', 'Organizadores']
+        for event in events:
+            values.append([
+                event['name'],
+                event['datetime'],
+                event['address'],
+                event['local'],
+                event['organizers']
+            ])
+
+        layout = [
+            [sg.Text('Lista de Eventos')],
+            [sg.Table(values=values, headings=headings)],
+            [sg.Submit('Voltar')]
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_event_menu(self, event):
+        self.__mount_event_menu_window(event)
+        button, _ = self.window.read()
+        self.close()
+
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
+
+        return button
+
+    def __mount_event_menu_window(self, event):
+        layout = [
+            [sg.Text('Evento')],
+            [sg.Text('Título: ' + event['name'])],
+            [sg.Text('Participantes: ' +
+                     len(event['participants'] + '/' + str(event.max_participants)))],
+            [sg.Text('Data: ' + event['datetime'])],
+            [sg.Text('Local: ' + event['local']['name'])],
+            [sg.Text('Organizadores: ' + event['organizers'])],
+            [sg.Text('')],
+            [sg.Button('Adicionar participante',
+                       key='add_participant', size=(30, None))],
+            [sg.Button('Listar participantes',
+                       key='list_participants', size=(30, None))],
+            [sg.Button('Listar participantes com comprovação Covid',
+                       key='list_participants_with_covid_proof', size=(30, None))],
+            [sg.Button('Listar participantes sem comprovação Covid',
+                       key='list_participants_without_covid_proof', size=(30, None))],
+            [sg.Button('Listar entrada',
+                       key='register_entrance', size=(30, None))],
+            [sg.Button('Registrar saída',
+                       key='register_leave', size=(30, None))],
+            [sg.Button('Sair', key='exit', size=(30, None))],
+        ]
+
+        self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def show_find_event(self):
+        self.__mount_find_event_window()
+
+        while (True):
+            button, values = self.window.read()
+
+            if (button is None or button == 'exit'):
+                raise(UserExitException)
+
+            if (values['title'].strip() == ''):
+                self.show_error_message('Título não deve ser vazio')
+                continue
+
+            return values
+
+    def __mount_find_event_window(self):
+        layout = [
+            [sg.Text('Encontrar evento')],
+            [sg.Text('', key='error_message')],
+            [sg.Text('Title')],
+            [sg.Input(key='title')],
+            [sg.Submit('Procurar'), sg.Button(
+                'Cancelar', key='exit')],
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def show_participants_list(self, participants_assoc):
+        self.__mount_participants_list(participants_assoc)
+        self.window.read()
+
+    def __mount_participants_list(self, participant_assoc):
+        values = []
+        headings = ['Nome', 'CPF', 'Aniversario',
+                    'Endereco', 'Tem comprovação Covid']
+        for participant in participant_assoc:
+            values.append([
+                participant['name'],
+                participant['cpf'],
+                participant['birthday'],
+                participant['address'],
+                'Sim' if participant['has_covid_proof'] else 'Não'
+            ])
+
+        layout = [
+            [sg.Text('Lista de Pessoas')],
+            [sg.Table(values=values, headings=headings)],
+            [sg.Submit('Voltar')]
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def show_get_hour(self):
+        self.__mount_show_get_hour()
+
         while True:
-            print('-----------= Evento =-----------')
-            print('Nome: ' + event.title)
-            print('Participantes: ' + str(len(event.participants)) + '/' + str(event.max_participants))
-            print('Data: ' + event.datetime.strftime('%d/%m/%Y %H:%M'))
-            print('Local: ' + event.local.name)
-            print('Organizadores: ' + self.__get_organizers_str(event))
-            print('')
-            print('1 - Cadastrar Participante')
-            print('2 - Listar Participantes')
-            print('3 - Listar Participantes com comprovacao Covid')
-            print('4 - Listar Participantes sem comprovacao Covid')
-            print('5 - Registrar entrada')
-            print('6 - Registrar saida')
-            print('0 - Sair')
+            button, values = self.window.read()
 
-            option = int(input('Selecione uma das opcoes: ').strip() or '-1')
+            if (button is None or button == 'exit'):
+                raise UserExitException()
 
-            if (option >= 0 and option <= 6):
-                return option
-            else:
-                print('Escolha uma opcao valida!')
-    
-    def __get_organizers_str(self, event):
-        str = ''
-        for index, organizer in enumerate(event.organizers):
-            str += organizer.name + ' (' + organizer.cpf + ')' + (', ' if index != len(event.organizers) - 1 else '')
-        return str
+            is_time_valid = validate_time(values['hour'])
+            if (not is_time_valid):
+                self.show_error_message('Formato de horário inválido')
+                continue
 
-    def show_find_event(self, headless = False):
-        if (not headless):
-            print('-----------= Procurar Evento =-----------')
-        local_name = input('Digite o nome do evento ou 0 para sair: ')
+            hour_raw_split = values['hour'].split(':')
+            hour = int(hour_raw_split[0])
+            minute = int(hour_raw_split[1])
 
-        if (local_name == '0'):
-            return None
+            return hour, minute
 
-        return local_name
-
-    def show_participants_list(self, participants_assoc, custom_header = None):
-        if (custom_header):
-            print(custom_header)
-        else:
-            print('-----------= Participantes =-----------')
-
-        for index, participant_assoc in enumerate(participants_assoc):
-            participant = participant_assoc.participant
-
-            def get_date_formatted(datetime):
-                if (datetime):
-                    return datetime.strftime('%H:%M')
-                else:
-                    return 'x'
-
-            print(
-                str(index + 1) + 
-                ' - ' + 
-                participant.name + 
-                ' (' + 
-                participant.cpf + 
-                ')' + 
-                (
-                    (' (' + get_date_formatted(participant_assoc.time_entrance) + ' -> ' + get_date_formatted(participant_assoc.time_leave) + ')') if (participant_assoc.time_entrance or participant_assoc.time_leave) else ''
-                )
-            )
-        
-        input('Aperte enter para sair... ')
-
-    def get_hour(self):
-        def ask_hour():
-            date_raw = input('Horario de Entrada (H:m): ')
-            is_date_valid = validate_time(date_raw)
-            if (not is_date_valid):
-                return None
-            return date_raw
-        date_raw = recurring_ask(ask_hour)
-        date_raw_split = date_raw.split(':')
-
-        hour = int(date_raw_split[0])
-        minute = int(date_raw_split[1])
-
-        return hour, minute
-
+    def __mount_show_get_hour(self):
+        layout = [
+            [sg.Text('Horário')],
+            [sg.Input(key='hour')],
+            [sg.Submit('Confirmar'), sg.Button('Cancelar', key='exit')]
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)

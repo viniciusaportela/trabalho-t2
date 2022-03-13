@@ -31,7 +31,7 @@ class ParticipantStore(Store):
         super().save()
 
     def list(self):
-        super().list()
+        return super().list()
 
     def get(self, cpf):
-        super().get(cpf)
+        return super().get(cpf)

@@ -23,7 +23,7 @@ class UserView:
 
     def open_users_menu(self):
         print('open users')
-        self.__create_menu_window()
+        self.__mount_menu_window()
         button, _ = self.__window.read()
         self.close()
 
@@ -32,7 +32,7 @@ class UserView:
 
         return button
 
-    def __create_menu_window(self):
+    def __mount_menu_window(self):
         self.close()
         layout = [
             [sg.Text('Menu Pessoas')],
@@ -46,7 +46,7 @@ class UserView:
         self.__window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_user_register(self, user_data=None):
-        self.__create_user_register_window(user_data)
+        self.__mount_user_register_window(user_data)
         self.__window.find_element('pcr_exam_result').update(value='--')
 
         while True:
@@ -90,10 +90,18 @@ class UserView:
                     'O usuário não pode ter mais que 150 anos!')
                 continue
 
+            if (
+                not values['has_pcr_test'] or
+                values['pcr_exam_result'] == '--' or
+                values['pcr_exam_date'].strip() == ''
+            ):
+                values['pcr_exam_result'] = None
+                values['has_pcr_test'] = False
+                values['pcr_exam_date'] = None
+
             return values
 
-    def __create_user_register_window(self, user_data=None):
-        self.close()
+    def __mount_user_register_window(self, user_data=None):
         layout = [
             [sg.Text('Editar pessoa' if user_data else 'Registrar pessoa')],
             [sg.Text('', key="error_message")],
@@ -116,43 +124,80 @@ class UserView:
         ]
         self.__window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
-    def show_find_user(self, headless=False):
-        if (not headless):
-            print('-----------= Procurar Pessoa =-----------')
-        user_cpf = input('Digite o CPF ou 0 para sair: ')
+    def __mount_find_user_window(self):
+        layout = [
+            [sg.Text('Encontrar pessoa')],
+            [sg.Text('', key='error_message')],
+            [sg.Text('CPF')],
+            [sg.Input(key='cpf')],
+            [sg.Submit('Procurar'), sg.Button(
+                'Cancelar', key='exit')],
+        ]
+        self.__window = sg.Window(DEFAULT_TITLE, layout)
 
-        if (user_cpf == '0'):
-            return None
+    def show_find_user(self):
+        self.__mount_find_user_window()
 
-        return user_cpf
+        while (True):
+            button, values = self.__window.read()
+
+            if (button is None or button == 'exit'):
+                raise(UserExitException)
+
+            if (values['cpf'].strip() == ''):
+                self.show_error_message('CPF não deve ser vazio')
+                continue
+
+            return values
+
+    def __mount_user_list_window(self, users):
+        values = []
+        headings = ['Nome', 'CPF', 'Aniversario',
+                    'Endereco', 'Tomou 2 doses']
+        for user in users:
+            values.append([
+                user['name'],
+                user['cpf'],
+                user['birthday'],
+                user['address'],
+                'Sim' if user['has_two_vaccines'] else 'Não'
+            ])
+
+        layout = [
+            [sg.Text('Lista de Pessoas')],
+            [sg.Table(values=values, headings=headings)],
+            [sg.Submit('Voltar')]
+        ]
+        self.__window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_user_list(self, users):
-        print('-----------= Lista de Usuarios =-----------')
-        for index, user in enumerate(users):
-            print(str(index + 1) + ' - ' + user.name + ' (' + user.cpf + ')')
-        input('Aperte enter para sair... ')
+        self.__mount_user_list_window(users)
+        self.__window.read()
 
     def show_user_details(self, user):
-        print('-----------= Usuario =-----------')
-        print('Nome: ' + user.name)
-        print('CPF: ' + user.cpf)
-        print('Aniversario: ' + user.birthday.strftime("%d/%m/%Y"))
-        print('Endereco: ' + user.address.cep + ', ' + user.address.street +
-              ', n. ' + user.address.number + ', ' + user.address.complement)
+        self.__mount_user_details_window(user)
+        self.__window.read()
+        self.__window.close()
 
-        if (user.has_two_vaccines == None):
-            print('Tomou duas doses: nao informado')
-        else:
-            print('Tomou duas doses: ' +
-                  ('sim' if user.has_two_vaccines else 'nao'))
+    def __mount_user_details_window(self, user):
+        def get_pcr_exam_text():
+            if ('pcr_exam' in user):
+                return 'Positivo' if user['pcr_exam']['has_covid'] else 'Negativo'
 
-        if (user.pcr_exam.date == None):
-            print('Exame PCR: nao realizado')
-        else:
-            print('Exame PCR: ' +
-                  ('positivo' if user.pcr_exam.has_covid else 'negativo'))
+            return 'Não realizado'
 
-        input('Aperte enter para sair... ')
+        layout = [
+            [sg.Text('Detalhes Pessoa')],
+            [sg.Text('Nome: ' + user['name'])],
+            [sg.Text('CPF: ' + user['cpf'])],
+            [sg.Text('Aniversario: ' + user['birthday'])],
+            [sg.Text('Tomou 2 doses: ' +
+                     ('Sim' if user['has_two_vaccines'] else 'Não'))],
+            [sg.Text('Exame PCR: ' + get_pcr_exam_text())],
+            [sg.Submit('Voltar')]
+        ]
+
+        self.__window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_participant_register(self, skip_first_ask=False):
         has_covid_proof = True

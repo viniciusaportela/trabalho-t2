@@ -3,6 +3,7 @@ from core.errors.already_exists_exception import AlreadyExistsException
 from core.errors.not_exists_exception import NotExistsException
 from core.errors.user_exit_exception import UserExitException
 from core.persistance.participant_store import ParticipantStore
+from models.pcr_exam_model import PCRExam
 from views.user_view import UserView
 from models.participant_model import Participant
 
@@ -30,7 +31,7 @@ class UsersController:
                            complement, has_two_vaccines, has_covid, pcr_exam_date)
         self.store.add(user)
 
-    def edit_user(self, cpf, name, birthday, cep, street, number, complement):
+    def edit_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
         user = self.get_user_by_cpf(cpf)
 
         if (not user):
@@ -42,6 +43,10 @@ class UsersController:
         user.address.street = street
         user.address.number = number
         user.address.complement = complement
+        user.has_two_vaccines = has_two_vaccines
+
+        if (has_covid != None and pcr_exam_date != None):
+            user.pcr_exam = PCRExam(has_covid, pcr_exam_date)
 
         self.store.update(cpf, user)
 
@@ -59,16 +64,17 @@ class UsersController:
 
     def open_user_menu(self):
         try:
-            bindings = {
-                'register_user': self.open_register_user,
-                'edit_user': self.open_edit_user,
-                'remove_user': self.open_remove_user,
-                'list_users': self.open_user_list,
-                'find_user': self.open_find_user
-            }
+            while True:
+                bindings = {
+                    'register_user': self.open_register_user,
+                    'edit_user': self.open_edit_user,
+                    'remove_user': self.open_remove_user,
+                    'list_users': self.open_user_list,
+                    'find_user': self.open_find_user
+                }
 
-            option = self.view.open_users_menu()
-            bindings[option]()
+                option = self.view.open_users_menu()
+                bindings[option]()
         except UserExitException:
             return
 
@@ -107,7 +113,7 @@ class UsersController:
                 user_data['pcr_exam_date'],
             )
 
-            self.view.show_message('Usuario adicionado!')
+            self.view.show_message('Usuário adicionado!')
         except UserExitException:
             self.view.close()
             return
@@ -126,7 +132,7 @@ class UsersController:
             participant_data['pcr_exam_date']
         )
 
-        print('Comprovacao Covid anexada!')
+        print('Comprovação Covid anexada!')
 
     def can_participant_event(self, user, event):
         if (not user.has_two_vaccines):
@@ -144,10 +150,8 @@ class UsersController:
 
     def open_edit_user(self):
         user = self.open_select_user()
-        if (user == None):
-            return
 
-        user_data = self.view.show_user_register(True)
+        user_data = self.view.show_user_register(user)
         address_data = self.__controllers_manager.address.view.show_register_address()
         self.edit_user(
             user.cpf,
@@ -157,41 +161,46 @@ class UsersController:
             address_data["street"],
             address_data["number"],
             address_data["complement"],
+            user_data['has_two_vaccines'],
+            True if user_data['pcr_exam_result'] == 'positivo' else False,
+            user_data['pcr_exam_date'],
         )
 
-        print('Usuario Editado!')
+        self.view.show_message('Usuário editado!')
 
     def open_remove_user(self):
         user = self.open_select_user()
-        if (user == None):
-            return
 
         self.remove_user(user.cpf)
 
-        print('Usuario deletado!')
+        self.view.show_message('Usuário deletado!')
 
     def open_user_list(self):
         users = self.get_users()
-        self.view.show_user_list(users)
+
+        data_users = []
+        for cpf in users:
+            user = self.get_user_by_cpf(cpf)
+            raw_user = user.to_raw()
+            data_users.append(raw_user)
+
+        self.view.show_user_list(data_users)
+        self.view.close()
 
     def open_find_user(self):
         user = self.open_select_user()
-        if (user == None):
-            return
 
-        self.view.show_user_details(user)
+        self.view.show_user_details(user.to_raw())
 
     def open_select_user(self):
         user = None
         while True:
-            user_cpf = self.view.show_find_user()
+            input_find = self.view.show_find_user()
+            self.view.close()
 
-            if user_cpf == None:
-                return
-
-            user, _ = self.get_user_by_cpf(user_cpf)
+            user = self.get_user_by_cpf(input_find['cpf'])
 
             if (user):
                 return user
             else:
-                print('Usuario nao encontrado')
+                self.view.show_message('Usuário não encontrado!')

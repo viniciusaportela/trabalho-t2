@@ -3,20 +3,21 @@ from core.constants import DEFAULT_TITLE
 
 from core.errors.user_exit_exception import UserExitException
 
+
 class MainView:
     def __init__(self) -> None:
         self.__setup_theme()
 
     def __setup_theme(self):
         sg.theme('DarkGrey5')
-    
+
     def close(self):
         if (self.__window):
             self.__window.close()
-    
-    def __create_window(self):
+
+    def __mount_window(self):
         layout = [
-            [sg.Text('Menu')], 
+            [sg.Text('Menu')],
             [sg.Button('Pessoas', key='people', size=(30, None))],
             [sg.Button('Eventos', key='events', size=(30, None))],
             [sg.Button('Organizadores', key='organizers', size=(30, None))],
@@ -27,13 +28,13 @@ class MainView:
         self.__window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_menu(self):
-        self.__create_window()
+        self.__mount_window()
         button, _ = self.__window.read()
         print('show_menu', button)
         self.close()
 
         if (button is None or button == 'exit'):
-            raise(UserExitException)        
+            raise(UserExitException)
 
         return button
 

@@ -15,7 +15,7 @@ class AddressView:
             self.__window.find_element(
                 'error_message', silent_on_error=True).update(error_message, background_color='#f5254b')
 
-    def __create_register_address_window(self):
+    def __mount_register_address_window(self):
         layout = [
             [sg.Text('Adicionar endereço')],
             [sg.Text('', key="error_message")],
@@ -37,7 +37,7 @@ class AddressView:
             self.__window.close()
 
     def show_register_address(self):
-        self.__create_register_address_window()
+        self.__mount_register_address_window()
 
         while True:
             button, values = self.__window.read()

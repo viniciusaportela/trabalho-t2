@@ -5,27 +5,33 @@ from models.participant_model import Participant
 
 class ParticipantStore(Store):
     def __init__(self):
-        super().__init__('participants')
-        if (not self.exists):
-            self.__inject_data()
+        super().__init__('participants', self.__inject_data)
 
     def __inject_data(self):
-        self.add('12312312314', 'Vinicius', datetime(2001, 7, 4),
-                 '8800000', 'rua porto', '220', 'apt 100')
-        self.add('12312312313', 'Jose', datetime(2000, 2, 5),
-                 '8800000', 'rua Almeida', '10', '', True)
+        user1 = Participant('12312312314', 'Vinicius', datetime(2001, 7, 4),
+                            '8800000', 'rua porto', '220', 'apt 100')
+        user2 = Participant('12312312313', 'Jose', datetime(2000, 2, 5),
+                            '8800000', 'rua Almeida', '10', '', True)
 
-    def add(participant: Participant):
-        super().add(participant)
+        self.add(user1)
+        self.add(user2)
 
-    def remove(cpf):
+        super().save()
+
+    def add(self, participant: Participant):
+        super().add(participant.cpf, participant)
+        super().save()
+
+    def remove(self, cpf):
         super().remove(cpf)
+        super().save()
 
-    def update(cpf, participant: Participant):
-        pass
+    def update(self, participant: Participant):
+        super().update(participant.cpf, participant)
+        super().save()
 
-    def list():
+    def list(self):
         super().list()
 
-    def get(cpf):
+    def get(self, cpf):
         super().get(cpf)

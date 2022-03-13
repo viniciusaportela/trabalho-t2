@@ -4,6 +4,7 @@ from core.errors.user_exit_exception import UserExitException
 from core.utils.date_validator import validate_date
 from core.utils.recurring_ask import recurring_ask
 import PySimpleGUI as sg
+from PySimpleGUI import ErrorElement
 
 
 class UserView:
@@ -11,10 +12,13 @@ class UserView:
         self.__window = None
 
     def show_error_message(self, error_message: str) -> None:
-        if (self.__window):
-            self.__window.find_element('error_message').update(error_message)
+        error_message_exists = not isinstance(self.__window.find_element(
+            'error_message', silent_on_error=True), ErrorElement)
+        if (self.__window and error_message_exists):
+            self.__window.find_element(
+                'error_message', silent_on_error=True).update(error_message, background_color='#f5254b')
 
-    def show_message(message):
+    def show_message(self, message):
         sg.Popup(message, keep_on_top=True)
 
     def open_users_menu(self):
@@ -41,66 +45,76 @@ class UserView:
         ]
         self.__window = sg.Window(DEFAULT_TITLE, layout)
 
+    def show_user_register(self, user_data=None):
+        self.__create_user_register_window(user_data)
+        self.__window.find_element('pcr_exam_result').update(value='--')
+
+        while True:
+            button, values = self.__window.read()
+
+            if (button is None or button == 'exit'):
+                raise(UserExitException)
+
+            if (values['name'] == ''):
+                self.show_error_message('Nome não pode ser vazio')
+                continue
+
+            if (values['cpf'] == ''):
+                self.show_error_message('CPF não pode ser vazio')
+                continue
+
+            if (len(values['cpf']) != 11):
+                self.show_error_message('CPF deve ter 11 caracteres')
+                continue
+
+            if (values['birthday'] == ''):
+                self.show_error_message('Data Nascimento não pode ser vazio')
+                continue
+
+            is_birthday_valid = validate_date(values['birthday'])
+            if (not is_birthday_valid):
+                self.show_error_message(
+                    'Formato de data em aniversario invalido')
+                continue
+
+            birthday_raw_split = values['birthday'].split("/")
+            values['birthday'] = datetime(
+                int(birthday_raw_split[2]),
+                int(birthday_raw_split[1]),
+                int(birthday_raw_split[0])
+            )
+
+            current = datetime.now()
+            if (current.year - values['birthday'].year > 150):
+                self.show_error_message(
+                    'O usuário não pode ter mais que 150 anos!')
+                continue
+
+            return values
+
     def __create_user_register_window(self, user_data=None):
         self.close()
         layout = [
             [sg.Text('Editar pessoa' if user_data else 'Registrar pessoa')],
+            [sg.Text('', key="error_message")],
             [sg.Text('Nome:')],
             [sg.Input(key='name')],
             [sg.Text('CPF:')],
             [sg.Input(key='cpf')],
             [sg.Text('Data Nascimento (dia/mes/ano):')],
             [sg.Input(key='birthday')],
+            [sg.HorizontalSeparator()],
+            [sg.Checkbox('Tomou 2 doses', key='has_two_vaccines')],
+            [sg.Checkbox('Fez exame PCR', key='has_pcr_test')],
+            [sg.Text('Resultado exame PCR (se fez):')],
+            [sg.Combo(['--', 'positivo', 'negativo'],
+                      key='pcr_exam_result')],
+            [sg.Text('Data exame PCR (dia/mes/ano) (se fez):')],
+            [sg.Input(key='pcr_exam_date')],
             [sg.Submit('Registar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
-        self.__window = sg.Window(DEFAULT_TITLE, layout)
-
-    def show_user_register(self, user_data=None):
-        self.__create_user_register_window(user_data)
-
-        # TODO Validate fields
-        # while invalid and not exit
-        # Cant have more than 150 years
-
-        # current = datetime.now()
-        # if (current.year - user_data["birthday"].year > 150):
-        #     self.view.show_message(
-        #         'O usuario nao pode ter mais que 150 anos!')
-        #     return
-
-        button, values = self.__window.read()
-        self.close()
-
-        if (button is None or button == 'exit'):
-            raise(UserExitException)
-
-        return values
-
-        # print('-----------= Editar Pessoa =-----------' if edit_mode else '-----------= Cadastrar Pessoa =-----------')
-        # name = input('Nome: ')
-        # cpf = None
-        # if (not edit_mode):
-        #     cpf = input('CPF: ')
-
-        # not_valid = True
-        # birthday = None
-        # while not_valid:
-        #     birthday_raw = input('Data Nascimento (dia/mes/ano): ')
-        #     is_valid = validate_date(birthday_raw)
-
-        #     if (is_valid):
-        #         not_valid = False
-        #         birthday_raw_split = birthday_raw.split("/")
-        #         birthday = datetime(
-        #             int(birthday_raw_split[2]),
-        #             int(birthday_raw_split[1]),
-        #             int(birthday_raw_split[0])
-        #         )
-        #     else:
-        #         print('Formato de data invalido! Por favor siga o padrao (dia/mes/ano):')
-
-        # return {"name": name, "cpf": cpf, "birthday": birthday}
+        self.__window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
     def show_find_user(self, headless=False):
         if (not headless):

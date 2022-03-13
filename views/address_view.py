@@ -1,29 +1,68 @@
-from core.utils.recurring_ask import recurring_ask
+from core.constants import DEFAULT_TITLE
+from core.errors.user_exit_exception import UserExitException
+import PySimpleGUI as sg
+from PySimpleGUI import ErrorElement
 
 
 class AddressView:
-    def show_register_address(self):
-        def ask_address_cep():
-            cep = input('CEP: ')
-            if (not cep.isnumeric()):
-                return None
-            return cep
-        cep = recurring_ask(ask_address_cep)
-        
-        street = input('Rua: ')
-        
-        def ask_address_number():
-            number = input('Numero: ')
-            if (not number.isnumeric()):
-                return None
-            return number
-        number = recurring_ask(ask_address_number)
-        
-        complement = input('Complemento: ')
+    def __init__(self):
+        self.__window = None
 
-        return { 
-            "cep": cep, 
-            "street": street, 
-            "number": number, 
-            "complement": complement
-        }
+    def show_error_message(self, error_message):
+        error_message_exists = not isinstance(self.__window.find_element(
+            'error_message', silent_on_error=True), ErrorElement)
+        if (self.__window and error_message_exists):
+            self.__window.find_element(
+                'error_message', silent_on_error=True).update(error_message, background_color='#f5254b')
+
+    def __create_register_address_window(self):
+        layout = [
+            [sg.Text('Adicionar endereço')],
+            [sg.Text('', key="error_message")],
+            [sg.Text('CEP:')],
+            [sg.Input(key='cep')],
+            [sg.Text('Numero:')],
+            [sg.Input(key='number')],
+            [sg.Text('Rua:')],
+            [sg.Input(key='street')],
+            [sg.Text('Complemento:')],
+            [sg.Input(key='complement')],
+            [sg.Submit('Registar'), sg.Button(
+                'Cancelar', key='exit')],
+        ]
+        self.__window = sg.Window(DEFAULT_TITLE, layout)
+
+    def close(self):
+        if (self.__window):
+            self.__window.close()
+
+    def show_register_address(self):
+        self.__create_register_address_window()
+
+        while True:
+            button, values = self.__window.read()
+
+            if (values['cep'] == ''):
+                self.show_error_message('CEP não pode ser vazio')
+                continue
+
+            if (not values['cep'].isnumeric()):
+                self.show_error_message('CEP deve ser um número')
+                continue
+
+            if (values['number'] == ''):
+                self.show_error_message('Número não pode ser vazio')
+                continue
+
+            if (not values['number'].isnumeric()):
+                self.show_error_message('Número deve ser um número')
+                continue
+
+            if (values['street'] == ''):
+                self.show_error_message('Rua não pode ser vazio')
+                continue
+
+            if (button is None or button == 'exit'):
+                raise(UserExitException)
+
+            return values

@@ -74,14 +74,25 @@ class UsersController:
 
     def open_register_user(self):
         try:
-            user_data = self.view.show_user_register()
+            user_data = None
+            address_data = None
 
-            already_has_user, _ = self.get_user_by_cpf(user_data['cpf'])
-            if (already_has_user != None):
-                self.view.show_message('Esse CPF ja foi cadastrado!')
-                return
+            user_correct_data = False
+            while not user_correct_data:
+                user_data = self.view.show_user_register()
+
+                already_has_user = self.get_user_by_cpf(user_data['cpf'])
+                if (already_has_user != None):
+                    self.view.show_error_message('Esse CPF ja foi cadastrado!')
+                    continue
+
+                user_correct_data = True
+
+            self.view.close()
 
             address_data = self.__controllers_manager.address.view.show_register_address()
+
+            self.__controllers_manager.address.view.close()
 
             self.add_user(
                 user_data["cpf"],
@@ -92,12 +103,13 @@ class UsersController:
                 address_data["number"],
                 address_data["complement"],
                 user_data['has_two_vaccines'],
-                user_data['has_covid'],
+                True if user_data['pcr_exam_result'] == 'positivo' else False,
                 user_data['pcr_exam_date'],
             )
 
             self.view.show_message('Usuario adicionado!')
         except UserExitException:
+            self.view.close()
             return
 
     def open_register_participant(self):

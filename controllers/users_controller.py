@@ -1,7 +1,7 @@
 from datetime import timedelta
-from core.errors.already_exists_exception import AlreadyExistsException
-from core.errors.not_exists_exception import NotExistsException
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.already_exists_exception import AlreadyExistsException
+from core.exceptions.not_exists_exception import NotExistsException
+from core.exceptions.user_exit_exception import UserExitException
 from core.persistance.participant_store import ParticipantStore
 from models.pcr_exam_model import PCRExam
 from views.user_view import UserView
@@ -117,22 +117,6 @@ class UsersController:
             self.view.close()
             return
 
-    def open_register_participant(self):
-        user = self.open_select_user()
-        if (user == None):
-            return
-
-        participant_data = self.view.show_participant_register(True)
-
-        self.set_covid_status(
-            user.cpf,
-            participant_data['has_two_vaccines'],
-            participant_data['has_covid'],
-            participant_data['pcr_exam_date']
-        )
-
-        print('Comprovação Covid anexada!')
-
     def can_participant_event(self, user, event):
         if (not user.has_two_vaccines):
             if (user.pcr_exam.date == None):
@@ -153,7 +137,10 @@ class UsersController:
 
             user_data = self.view.show_user_register(
                 user.to_raw(address_str=False))
+
             address_data = self.__controllers_manager.address.view.show_register_address()
+            self.__controllers_manager.address.view.close()
+
             self.edit_user(
                 user.cpf,
                 user_data["name"],
@@ -197,7 +184,6 @@ class UsersController:
         self.view.show_user_details(user.to_raw())
 
     def open_select_user(self):
-        user = None
         while True:
             input_find = self.view.show_find_user()
             self.view.close()

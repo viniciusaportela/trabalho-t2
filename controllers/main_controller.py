@@ -1,6 +1,6 @@
 import traceback
 from controllers.controllers_manager import controllers_manager
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.user_exit_exception import UserExitException
 from views.main_view import MainView
 
 DEBUG_MODE = True
@@ -11,11 +11,6 @@ class MainController:
         self.view = MainView()
 
     # def __inject_data(self):
-    #     controllers_manager.organizer.add_organizer('1234', 'Jose', datetime(2000, 2, 5), '8800000', 'rua Almeida', '10', '')
-    #     controllers_manager.local.add_local('Shopping Trindade', '8800000', 'rua Almeida', '30', 'Loja 2')
-
-    #     local, _ = controllers_manager.local.get_local_by_name('Shopping Trindade')
-    #     organizer, _ = controllers_manager.organizer.get_organizer_by_cpf('1234')
     #     controllers_manager.event.add_event('E', 25, local, '01/01/2020 17:30', [organizer])
     #     controllers_manager.event.add_event('E2', 10, local, '22/02/2022 17:30', [organizer])
     #     controllers_manager.event.add_event('E3', 10, local, '22/04/2022 17:30', [organizer])

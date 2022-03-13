@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 from core.constants import DEFAULT_TITLE
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.user_exit_exception import UserExitException
 from core.utils.date_validator import validate_date
 from core.utils.recurring_ask import recurring_ask
 import PySimpleGUI as sg
@@ -73,6 +73,18 @@ class UserView(UIView):
                 int(birthday_raw_split[0])
             )
 
+            # TODO
+            # date_is_valid = validate_date(pcr_exam_date_raw)
+            # if (not date_is_valid):
+            #     return None
+
+            # pcr_exam_date_raw_splitted = pcr_exam_date_raw.split("/")
+            # pcr_exam_date = datetime(
+            #     int(pcr_exam_date_raw_splitted[2]),
+            #     int(pcr_exam_date_raw_splitted[1]),
+            #     int(pcr_exam_date_raw_splitted[0])
+            # )
+
             current = datetime.now()
             if (current.year - values['birthday'].year > 150):
                 self.show_error_message(
@@ -142,17 +154,6 @@ class UserView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
-    def __mount_find_user_window(self):
-        layout = [
-            [sg.Text('Encontrar pessoa')],
-            [sg.Text('', key='error_message')],
-            [sg.Text('CPF')],
-            [sg.Input(key='cpf')],
-            [sg.Submit('Procurar'), sg.Button(
-                'Cancelar', key='exit')],
-        ]
-        self.window = sg.Window(DEFAULT_TITLE, layout)
-
     def show_find_user(self):
         self.__mount_find_user_window()
 
@@ -167,6 +168,10 @@ class UserView(UIView):
                 continue
 
             return values
+
+    def show_user_list(self, users):
+        self.__mount_user_list_window(users)
+        self.window.read()
 
     def __mount_user_list_window(self, users):
         values = []
@@ -188,10 +193,6 @@ class UserView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_user_list(self, users):
-        self.__mount_user_list_window(users)
-        self.window.read()
-
     def show_user_details(self, user):
         self.__mount_user_details_window(user)
         self.window.read()
@@ -208,6 +209,7 @@ class UserView(UIView):
             [sg.Text('Detalhes Pessoa')],
             [sg.Text('Nome: ' + user['name'])],
             [sg.Text('CPF: ' + user['cpf'])],
+            [sg.Text('Endereço: ' + user['address'])],
             [sg.Text('Aniversario: ' + user['birthday'])],
             [sg.Text('Tomou 2 doses: ' +
                      ('Sim' if user['has_two_vaccines'] else 'Não'))],
@@ -216,57 +218,3 @@ class UserView(UIView):
         ]
 
         self.window = sg.Window(DEFAULT_TITLE, layout)
-
-    def show_participant_register(self, skip_first_ask=False):
-        has_covid_proof = True
-        if (not skip_first_ask):
-            def ask_has_covid_proof():
-                has_covid_proof = input(
-                    "Tem alguma comprovacao contra covid (s/n)? ").lower()
-                if (has_covid_proof != 's' and has_covid_proof != 'n'):
-                    return None
-                return has_covid_proof == 's'
-            has_covid_proof = recurring_ask(ask_has_covid_proof)
-
-        if not has_covid_proof:
-            return {"has_two_vaccines": None, "has_covid": None, "pcr_exam_date": None}
-
-        def ask_has_covid_proof():
-            has_two_vaccines = input('Tomou duas doses (s/n)? ').lower()
-            if (has_two_vaccines != 's' and has_two_vaccines != 'n'):
-                return None
-            return has_two_vaccines == 's'
-        has_two_vaccines = recurring_ask(ask_has_covid_proof)
-
-        if (has_two_vaccines):
-            return {"has_two_vaccines": has_two_vaccines, "has_covid": None, "pcr_exam_date": None}
-
-        has_pcr_test = input('Fez um teste PCR (s/n)? ') == 's'
-
-        if (not has_pcr_test):
-            return {"has_two_vaccines": None, "has_covid": None, "pcr_exam_date": None}
-
-        def ask_pcr_exam_has_covid():
-            has_covid = input('Qual resultado do exame(positivo/negativo)? ')
-            if (has_covid != 'positivo' and has_covid != 'negativo'):
-                return None
-            return has_covid == 'positivo'
-        has_covid = recurring_ask(ask_pcr_exam_has_covid)
-
-        def ask_pcr_exam_date():
-            pcr_exam_date_raw = input(
-                'Qual foi a data do exame (dia/mes/ano)? ')
-            date_is_valid = validate_date(pcr_exam_date_raw)
-            if (not date_is_valid):
-                return None
-
-            pcr_exam_date_raw_splitted = pcr_exam_date_raw.split("/")
-            pcr_exam_date = datetime(
-                int(pcr_exam_date_raw_splitted[2]),
-                int(pcr_exam_date_raw_splitted[1]),
-                int(pcr_exam_date_raw_splitted[0])
-            )
-            return pcr_exam_date
-        pcr_exam_date = recurring_ask(ask_pcr_exam_date)
-
-        return {"has_two_vaccines": False, "has_covid": has_covid, "pcr_exam_date": pcr_exam_date}

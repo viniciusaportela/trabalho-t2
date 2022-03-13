@@ -1,6 +1,6 @@
 from views.locals_view import LocalsView
 from models.local_model import Local
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.user_exit_exception import UserExitException
 from core.persistance.local_store import LocalStore
 
 
@@ -52,6 +52,7 @@ class LocalsController:
     def open_register_local(self):
         local_data = self.view.show_register_local()
         address_data = self.__controllers_manager.address.view.show_register_address()
+        self.__controllers_manager.address.view.close()
 
         self.add_local(
             local_data['name'],
@@ -84,9 +85,11 @@ class LocalsController:
 
     def open_local_list(self):
         locals = self.get_locals()
+        print(locals)
 
         locals_data = []
-        for local in locals:
+        for key in locals:
+            local = locals[key]
             locals_data.append(local.to_raw())
 
         self.view.show_locals_list(locals_data)
@@ -97,9 +100,10 @@ class LocalsController:
 
     def open_select_local(self):
         while True:
-            local_name = self.view.show_find_local()
+            values = self.view.show_find_local()
+            self.view.close()
 
-            local = self.get_local_by_name(local_name)
+            local = self.get_local_by_name(values['name'])
 
             if (local):
                 return local

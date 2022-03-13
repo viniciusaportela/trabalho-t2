@@ -1,5 +1,5 @@
 from core.constants import DEFAULT_TITLE
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.user_exit_exception import UserExitException
 import PySimpleGUI as sg
 from PySimpleGUI import ErrorElement
 

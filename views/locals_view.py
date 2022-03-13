@@ -1,7 +1,7 @@
 
 import PySimpleGUI as sg
 from core.constants import DEFAULT_TITLE
-from core.errors.user_exit_exception import UserExitException
+from core.exceptions.user_exit_exception import UserExitException
 from views.ui_view import UIView
 
 
@@ -133,5 +133,6 @@ class LocalsView(UIView):
             [sg.Text('Detalhes Local')],
             [sg.Text('Nome: ' + local['name'])],
             [sg.Text('Endereço: ' + local['address'])],
+            [sg.Submit('Voltar')]
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)

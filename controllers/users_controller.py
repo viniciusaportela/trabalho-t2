@@ -63,15 +63,15 @@ class UsersController:
 
     def open_user_menu(self):
         try:
-            while True:
-                bindings = {
-                    'register_user': self.open_register_user,
-                    'edit_user': self.open_edit_user,
-                    'remove_user': self.open_remove_user,
-                    'list_users': self.open_user_list,
-                    'find_user': self.open_find_user
-                }
+            bindings = {
+                'register_user': self.open_register_user,
+                'edit_user': self.open_edit_user,
+                'remove_user': self.open_remove_user,
+                'list_users': self.open_user_list,
+                'find_user': self.open_find_user
+            }
 
+            while True:
                 option = self.view.show_users_menu()
                 bindings[option]()
         except UserExitException:

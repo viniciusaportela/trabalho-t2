@@ -1,36 +1,56 @@
-class ReportsView:
+from core.exceptions.user_exit_exception import UserExitException
+from core.constants import DEFAULT_TITLE
+from views.ui_view import UIView
+import PySimpleGUI as sg
+
+
+class ReportsView(UIView):
     def show_reports_menu(self):
-        while True:
-            print('-----------= Menu Relatorios =-----------')
-            print('1 - Eventos a realizar')
-            print('2 - Ranking de eventos por numero de participantes')
-            print('3 - Eventos ja realizados')
-            print('0 - Voltar')
-            
-            option = int(input('Por favor insira uma opcao: ').strip() or '-1')
-            
-            if (option >= 0 and option <= 3):
-                return option
-            else:
-                print('Escolha uma opcao valida!')
+        self.__mount_menu_window()
+        button, _ = self.window.read()
+        self.close()
 
-    def show_report_events(self, events, header = None, with_participants = None):
-        if (header):
-            print(header)
-        else:
-            print('-----------= Eventos =-----------')
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
 
-        for index, event in enumerate(events):
-            print(
-                str(index + 1) + 
-                ' - ' + 
-                event.title + 
-                ' (' + 
-                event.local.name +
-                ')' +
-                ' - ' +
-                event.datetime.strftime('%d/%m/%Y %H:%M') +
-                ((' - ' + str(len(event.participants)) + ' participantes') if with_participants else '')
-            )
-        
-        input('Aperte enter para sair... ')
+        return button
+
+    def __mount_menu_window(self):
+        self.close()
+        layout = [
+            [sg.Text('Menu Relatórios')],
+            [sg.Button('Eventos a realizar',
+                       key='soon_events', size=(30, None))],
+            [sg.Button('Ranking de eventos por número de participantes',
+                       key='ranking_events', size=(30, None))],
+            [sg.Button('Eventos já realizados',
+                       key='past_events', size=(30, None))],
+            [sg.Button('Sair', key='exit', size=(30, None))],
+        ]
+        self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def show_report_events(self, title, events):
+        self.__mount_reports_events(title, events)
+        self.window.read()
+        self.close()
+
+    def __mount_reports_events(self, title, events):
+        values = []
+        headings = ['Nome', 'Local', 'Data',
+                    'Participantes']
+
+        for event in events:
+            values.append([
+                event['name'],
+                event['local']['name'],
+                event['datetime'],
+                len(event['participants']),
+            ])
+
+        layout = [
+            [sg.Text(title)],
+            [sg.Table(values=values, headings=headings)],
+            [sg.Submit('Voltar')]
+        ]
+
+        self.window = sg.Window(DEFAULT_TITLE, layout)

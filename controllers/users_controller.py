@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from core.errors.already_exists_exception import AlreadyExistsException
 from core.errors.not_exists_exception import NotExistsException
 from core.errors.user_exit_exception import UserExitException
@@ -10,7 +10,6 @@ from models.participant_model import Participant
 
 class UsersController:
     def __init__(self, controllers_manager):
-        self.__users = []
         self.__controllers_manager = controllers_manager
         self.view = UserView()
         self.store = ParticipantStore()
@@ -73,7 +72,7 @@ class UsersController:
                     'find_user': self.open_find_user
                 }
 
-                option = self.view.open_users_menu()
+                option = self.view.show_users_menu()
                 bindings[option]()
         except UserExitException:
             return
@@ -149,24 +148,29 @@ class UsersController:
         return True
 
     def open_edit_user(self):
-        user = self.open_select_user()
+        try:
+            user = self.open_select_user()
 
-        user_data = self.view.show_user_register(user)
-        address_data = self.__controllers_manager.address.view.show_register_address()
-        self.edit_user(
-            user.cpf,
-            user_data["name"],
-            user_data["birthday"],
-            address_data["cep"],
-            address_data["street"],
-            address_data["number"],
-            address_data["complement"],
-            user_data['has_two_vaccines'],
-            True if user_data['pcr_exam_result'] == 'positivo' else False,
-            user_data['pcr_exam_date'],
-        )
+            user_data = self.view.show_user_register(
+                user.to_raw(address_str=False))
+            address_data = self.__controllers_manager.address.view.show_register_address()
+            self.edit_user(
+                user.cpf,
+                user_data["name"],
+                user_data["birthday"],
+                address_data["cep"],
+                address_data["street"],
+                address_data["number"],
+                address_data["complement"],
+                user_data['has_two_vaccines'],
+                True if user_data['pcr_exam_result'] == 'positivo' else False,
+                user_data['pcr_exam_date'],
+            )
 
-        self.view.show_message('Usuário editado!')
+            self.view.show_message('Usuário editado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_remove_user(self):
         user = self.open_select_user()

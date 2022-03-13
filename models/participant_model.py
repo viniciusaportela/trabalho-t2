@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from models.address_model import Address
 from models.person_model import Person
 from models.pcr_exam_model import PCRExam
@@ -14,31 +13,19 @@ class Participant(Person):
         self.__pcr_exam = PCRExam(has_covid, pcr_exam_date)
         self.__has_two_vaccines = has_two_vaccines
 
-    def to_raw(self):
-        def create_address_str(user):
-            return (
-                user.address.street +
-                ', n ' +
-                user.address.number +
-                ((', ' + user.address.complement) if user.address.complement != '' else '') +
-                ' (' +
-                user.address.cep +
-                ')'
-            )
+    def to_raw(self, address_str=True):
+        has_pcr_exam = self.pcr_exam.has_covid != None and self.pcr_exam.date != None
+        print('has_pcr_exam', has_pcr_exam)
 
         obj = {
             "name": self.name,
             "cpf": self.cpf,
             "birthday": self.birthday.strftime('%d/%m/%Y'),
-            "address": create_address_str(self),
-            "has_two_vaccines": self.has_two_vaccines
+            "address": self.address.to_raw_str() if address_str else self.address.to_raw(),
+            "has_two_vaccines": self.has_two_vaccines,
+            "has_pcr_exam": has_pcr_exam,
+            'pcr_exam': self.pcr_exam.to_raw()
         }
-
-        if (self.pcr_exam.has_covid and self.pcr_exam.pcr_exam_date):
-            obj['pcr_exam'] = {
-                'has_covid': self.pcr_exam.has_covid,
-                'pcr_exam_date': self.pcr_exam_date.strftime('%d/%m/%Y')
-            }
 
         return obj
 
@@ -70,9 +57,8 @@ class Participant(Person):
     def address(self):
         return self.__address
 
-    # TODO
     @address.setter
-    def address(self, address: str):
+    def address(self, address: Address):
         self.__address = address
 
     @property
@@ -80,7 +66,7 @@ class Participant(Person):
         return self.__pcr_exam
 
     @pcr_exam.setter
-    def pcr_exam(self, pcr_exam: str):
+    def pcr_exam(self, pcr_exam: PCRExam):
         self.__pcr_exam = pcr_exam
 
     @property

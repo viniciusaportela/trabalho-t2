@@ -1,30 +1,20 @@
 from datetime import datetime
+import json
 from core.constants import DEFAULT_TITLE
 from core.errors.user_exit_exception import UserExitException
 from core.utils.date_validator import validate_date
 from core.utils.recurring_ask import recurring_ask
 import PySimpleGUI as sg
-from PySimpleGUI import ErrorElement
+from views.ui_view import UIView
 
 
-class UserView:
+class UserView(UIView):
     def __init__(self):
-        self.__window = None
+        super().__init__()
 
-    def show_error_message(self, error_message: str) -> None:
-        error_message_exists = not isinstance(self.__window.find_element(
-            'error_message', silent_on_error=True), ErrorElement)
-        if (self.__window and error_message_exists):
-            self.__window.find_element(
-                'error_message', silent_on_error=True).update(error_message, background_color='#f5254b')
-
-    def show_message(self, message):
-        sg.Popup(message, keep_on_top=True)
-
-    def open_users_menu(self):
-        print('open users')
+    def show_users_menu(self):
         self.__mount_menu_window()
-        button, _ = self.__window.read()
+        button, _ = self.window.read()
         self.close()
 
         if (button is None or button == 'exit'):
@@ -38,19 +28,18 @@ class UserView:
             [sg.Text('Menu Pessoas')],
             [sg.Button('Cadastrar Pessoa', key='register_user', size=(30, None))],
             [sg.Button('Editar pessoa', key='edit_user', size=(30, None))],
-            [sg.Button('Remover pessoa', key='delete_user', size=(30, None))],
+            [sg.Button('Remover pessoa', key='remove_user', size=(30, None))],
             [sg.Button('Listar Pessoas', key='list_users', size=(30, None))],
             [sg.Button('Procurar Pessoa', key='find_user', size=(30, None))],
             [sg.Button('Sair', key='exit', size=(30, None))],
         ]
-        self.__window = sg.Window(DEFAULT_TITLE, layout)
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_user_register(self, user_data=None):
         self.__mount_user_register_window(user_data)
-        self.__window.find_element('pcr_exam_result').update(value='--')
 
         while True:
-            button, values = self.__window.read()
+            button, values = self.window.read()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)
@@ -91,38 +80,67 @@ class UserView:
                 continue
 
             if (
-                not values['has_pcr_test'] or
+                not values['has_pcr_exam'] or
                 values['pcr_exam_result'] == '--' or
                 values['pcr_exam_date'].strip() == ''
             ):
                 values['pcr_exam_result'] = None
-                values['has_pcr_test'] = False
+                values['has_pcr_exam'] = False
                 values['pcr_exam_date'] = None
 
             return values
 
     def __mount_user_register_window(self, user_data=None):
+        defaults = {}
+
+        if (user_data != None):
+            defaults = {
+                "name": user_data['name'],
+                "cpf": user_data['cpf'],
+                "birthday": user_data['birthday'],
+                "has_two_vaccines": user_data['has_two_vaccines'],
+                "has_pcr_exam": user_data['has_pcr_exam'],
+                "pcr_exam_result": "--",
+                "pcr_exam_date": '',
+            }
+
+            if (user_data['has_pcr_exam']):
+                defaults['pcr_exam_result'] = user_data['pcr_exam']['has_covid'] if user_data['pcr_exam']['has_covid'] != None else '--',
+                defaults['pcr_exam_date'] = user_data['pcr_exam']['pcr_exam_date']
+        else:
+            defaults = {
+                "name": '',
+                "cpf": '',
+                "birthday": '',
+                "has_two_vaccines": False,
+                "has_pcr_exam": False,
+                "pcr_exam_result": "--",
+                "pcr_exam_date": '',
+            }
+
         layout = [
             [sg.Text('Editar pessoa' if user_data else 'Registrar pessoa')],
             [sg.Text('', key="error_message")],
             [sg.Text('Nome:')],
-            [sg.Input(key='name')],
+            [sg.Input(defaults['name'], key='name')],
             [sg.Text('CPF:')],
-            [sg.Input(key='cpf')],
+            [sg.Input(defaults['cpf'], key='cpf', disabled=user_data != None)],
             [sg.Text('Data Nascimento (dia/mes/ano):')],
-            [sg.Input(key='birthday')],
+            [sg.Input(defaults['birthday'], key='birthday')],
             [sg.HorizontalSeparator()],
-            [sg.Checkbox('Tomou 2 doses', key='has_two_vaccines')],
-            [sg.Checkbox('Fez exame PCR', key='has_pcr_test')],
+            [sg.Checkbox('Tomou 2 doses', key='has_two_vaccines',
+                         default=defaults['has_two_vaccines'])],
+            [sg.Checkbox('Fez exame PCR', key='has_pcr_exam',
+                         default=defaults['has_pcr_exam'])],
             [sg.Text('Resultado exame PCR (se fez):')],
             [sg.Combo(['--', 'positivo', 'negativo'],
-                      key='pcr_exam_result')],
+                      default_value=defaults['pcr_exam_result'], key='pcr_exam_result')],
             [sg.Text('Data exame PCR (dia/mes/ano) (se fez):')],
-            [sg.Input(key='pcr_exam_date')],
+            [sg.Input(defaults['pcr_exam_date'], key='pcr_exam_date')],
             [sg.Submit('Registar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
-        self.__window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
+        self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
     def __mount_find_user_window(self):
         layout = [
@@ -133,13 +151,13 @@ class UserView:
             [sg.Submit('Procurar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
-        self.__window = sg.Window(DEFAULT_TITLE, layout)
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_find_user(self):
         self.__mount_find_user_window()
 
         while (True):
-            button, values = self.__window.read()
+            button, values = self.window.read()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)
@@ -168,16 +186,16 @@ class UserView:
             [sg.Table(values=values, headings=headings)],
             [sg.Submit('Voltar')]
         ]
-        self.__window = sg.Window(DEFAULT_TITLE, layout)
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_user_list(self, users):
         self.__mount_user_list_window(users)
-        self.__window.read()
+        self.window.read()
 
     def show_user_details(self, user):
         self.__mount_user_details_window(user)
-        self.__window.read()
-        self.__window.close()
+        self.window.read()
+        self.window.close()
 
     def __mount_user_details_window(self, user):
         def get_pcr_exam_text():
@@ -197,7 +215,7 @@ class UserView:
             [sg.Submit('Voltar')]
         ]
 
-        self.__window = sg.Window(DEFAULT_TITLE, layout)
+        self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_participant_register(self, skip_first_ask=False):
         has_covid_proof = True
@@ -252,8 +270,3 @@ class UserView:
         pcr_exam_date = recurring_ask(ask_pcr_exam_date)
 
         return {"has_two_vaccines": False, "has_covid": has_covid, "pcr_exam_date": pcr_exam_date}
-
-    def close(self):
-        print('open_users_menu close')
-        if (self.__window):
-            self.__window.close()

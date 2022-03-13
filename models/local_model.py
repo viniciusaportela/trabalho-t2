@@ -6,6 +6,12 @@ class Local:
         self.__name = name
         self.__address = Address(cep, street, number, complement)
 
+    def to_raw(self):
+        return {
+            "name": self.name,
+            "address": self.address.to_raw_str(),
+        }
+
     @property
     def name(self):
         return self.__name

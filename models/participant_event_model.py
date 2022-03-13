@@ -5,29 +5,19 @@ class ParticipantEvent:
         self.__time_entrance = time_entrance
         self.__time_leave = time_leave
 
-    def to_raw():
-        # for index, participant_assoc in enumerate(participants_assoc):
-        #       participant = participant_assoc.participant
+    def __get_formatted_hour(self, hour):
+        if (hour):
+            return hour.strftime('%H:%M')
+        else:
+            return 'x'
 
-        #        def get_date_formatted(datetime):
-        #             if (datetime):
-        #                 return datetime.strftime('%H:%M')
-        #             else:
-        #                 return 'x'
-
-        #         print(
-        #             str(index + 1) +
-        #             ' - ' +
-        #             participant.name +
-        #             ' (' +
-        #             participant.cpf +
-        #             ')' +
-        #             (
-        #                 (' (' + get_date_formatted(participant_assoc.time_entrance) + ' -> ' + get_date_formatted(
-        #                     participant_assoc.time_leave) + ')') if (participant_assoc.time_entrance or participant_assoc.time_leave) else ''
-        #             )
-        #         )
-        return {}
+    def to_raw(self):
+        return {
+            "event": self.event.to_raw(),
+            "participant": self.participant.to_raw(),
+            "time_entrance": self.__get_formatted_hour(self.time_entrance),
+            "time_leave": self.__get_formatted_hour(self.time_leave),
+        }
 
     @property
     def event(self):

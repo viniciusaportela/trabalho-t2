@@ -21,7 +21,7 @@ class Event:
                 organizers_str += ', '
 
         return {
-            "title": self.tittle,
+            "title": self.title,
             "max_participants": self.max_participants,
             "datetime": self.datetime,
             "participants": raw_participants,

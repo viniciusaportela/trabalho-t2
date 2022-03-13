@@ -17,7 +17,7 @@ class ReportsController:
             }
 
             while True:
-                option = self.view.show_users_menu()
+                option = self.view.show_reports_menu()
                 bindings[option]()
         except UserExitException:
             return
@@ -26,7 +26,8 @@ class ReportsController:
         events = self.__controllers_manager.event.get_events()
 
         soon_events = []
-        for event in events:
+        for key in events:
+            event = events[key]
             current = datetime.now()
             if (event.datetime > current):
                 soon_events.append(event)
@@ -40,7 +41,11 @@ class ReportsController:
     def open_events_ranking_by_participants(self):
         events = self.__controllers_manager.event.get_events()
 
-        events_sorted = self.__sort_events_by_participants_count(events)
+        arr_events = []
+        for key in events:
+            arr_events.append(events[key])
+
+        events_sorted = self.__sort_events_by_participants_count(arr_events)
         for index, event in enumerate(events_sorted):
             events_sorted[index] = event.to_raw()
 
@@ -51,7 +56,8 @@ class ReportsController:
         events = self.__controllers_manager.event.get_events()
 
         past_events = []
-        for event in events:
+        for key in events:
+            event = events[key]
             current = datetime.now()
             if (event.datetime <= current):
                 past_events.append(event)

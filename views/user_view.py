@@ -61,7 +61,7 @@ class UserView(UIView):
             is_birthday_valid = validate_date(values['birthday'])
             if (not is_birthday_valid):
                 self.show_error_message(
-                    'Formato de data em aniversario invalido')
+                    'Formato de data em aniversario inválido')
                 continue
 
             birthday_raw_split = values['birthday'].split("/")
@@ -71,31 +71,33 @@ class UserView(UIView):
                 int(birthday_raw_split[0])
             )
 
-            # TODO
-            # date_is_valid = validate_date(pcr_exam_date_raw)
-            # if (not date_is_valid):
-            #     return None
-
-            # pcr_exam_date_raw_splitted = pcr_exam_date_raw.split("/")
-            # pcr_exam_date = datetime(
-            #     int(pcr_exam_date_raw_splitted[2]),
-            #     int(pcr_exam_date_raw_splitted[1]),
-            #     int(pcr_exam_date_raw_splitted[0])
-            # )
-
             current = datetime.now()
             if (current.year - values['birthday'].year > 150):
                 self.show_error_message(
                     'O usuário não pode ter mais que 150 anos!')
                 continue
 
-            if (
-                not values['has_pcr_exam'] or
-                values['pcr_exam_result'] == '--' or
-                values['pcr_exam_date'].strip() == ''
-            ):
+            if (values['has_pcr_exam']):
+                date_is_valid = validate_date(values['pcr_exam_date'])
+                if (not date_is_valid):
+                    self.show_error_message(
+                        'Formato de data do exame inválido')
+                    continue
+
+                pcr_exam_date_raw_splitted = values['pcr_exam_date'].split("/")
+                pcr_exam_date = datetime(
+                    int(pcr_exam_date_raw_splitted[2]),
+                    int(pcr_exam_date_raw_splitted[1]),
+                    int(pcr_exam_date_raw_splitted[0])
+                )
+                values['pcr_exam_date'] = pcr_exam_date
+
+                if (values['pcr_exam_result'] != 'positivo' and values['pcr_exam_result' != 'negativo']):
+                    self.show_error_message(
+                        'O resultado do exame deve ser positivo ou negativo')
+                    continue
+            else:
                 values['pcr_exam_result'] = None
-                values['has_pcr_exam'] = False
                 values['pcr_exam_date'] = None
 
             return values

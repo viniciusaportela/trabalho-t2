@@ -11,7 +11,7 @@ class EventsController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
         self.view = EventsView()
-        self.store = EventStore()
+        self.store = EventStore(controllers_manager)
 
     def get_events(self):
         return self.store.list()

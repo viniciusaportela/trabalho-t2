@@ -36,12 +36,12 @@ class ReportsView(UIView):
 
     def __mount_reports_events(self, title, events):
         values = []
-        headings = ['Nome', 'Local', 'Data',
+        headings = ['Título', 'Local', 'Data',
                     'Participantes']
 
         for event in events:
             values.append([
-                event['name'],
+                event['title'],
                 event['local']['name'],
                 event['datetime'],
                 len(event['participants']),

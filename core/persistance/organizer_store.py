@@ -5,6 +5,7 @@ from models.organizer_model import Organizer
 
 class OrganizerStore(Store):
     def __init__(self):
+        print('organizer_store init')
         super().__init__('organizers', self.__inject_data)
 
     def __inject_data(self):

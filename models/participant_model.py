@@ -4,20 +4,15 @@ from models.pcr_exam_model import PCRExam
 
 
 class Participant(Person):
-    # TODO don't repeat Abstract properties
     def __init__(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
-        self.__cpf = cpf
-        self.__name = name
-        self.__birthday = birthday
-        self.__address = Address(cep, street, number, complement)
+        super().__init__(cpf, name, birthday, cep, street, number, complement)
         self.__pcr_exam = PCRExam(has_covid, pcr_exam_date)
         self.__has_two_vaccines = has_two_vaccines
 
     def to_raw(self, address_str=True):
         has_pcr_exam = self.pcr_exam.has_covid != None and self.pcr_exam.date != None
-        print('has_pcr_exam', has_pcr_exam)
 
-        obj = {
+        return {
             "name": self.name,
             "cpf": self.cpf,
             "birthday": self.birthday.strftime('%d/%m/%Y'),
@@ -26,40 +21,6 @@ class Participant(Person):
             "has_pcr_exam": has_pcr_exam,
             'pcr_exam': self.pcr_exam.to_raw()
         }
-
-        return obj
-
-    @property
-    def cpf(self):
-        return self.__cpf
-
-    @cpf.setter
-    def cpf(self, cpf: str):
-        self.__cpf = cpf
-
-    @property
-    def name(self):
-        return self.__name
-
-    @name.setter
-    def name(self, name: str):
-        self.__name = name
-
-    @property
-    def birthday(self):
-        return self.__birthday
-
-    @birthday.setter
-    def birthday(self, birthday):
-        self.__birthday = birthday
-
-    @property
-    def address(self):
-        return self.__address
-
-    @address.setter
-    def address(self, address: Address):
-        self.__address = address
 
     @property
     def pcr_exam(self):

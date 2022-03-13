@@ -5,6 +5,7 @@ from models.participant_model import Participant
 
 class ParticipantStore(Store):
     def __init__(self):
+        print('participant_store init')
         super().__init__('participants', self.__inject_data)
 
     def __inject_data(self):

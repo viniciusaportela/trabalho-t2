@@ -5,6 +5,7 @@ from models.local_model import Local
 
 class LocalStore(Store):
     def __init__(self):
+        print('local_store init')
         super().__init__('locals', self.__inject_data)
 
     def __inject_data(self):

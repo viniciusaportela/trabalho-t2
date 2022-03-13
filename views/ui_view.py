@@ -17,6 +17,5 @@ class UIView:
         sg.Popup(message, keep_on_top=True)
 
     def close(self):
-        print('close', self.window)
         if (self.window):
             self.window.close()

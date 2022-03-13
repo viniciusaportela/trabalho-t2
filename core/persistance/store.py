@@ -1,18 +1,25 @@
 from abc import ABC, abstractmethod
 from genericpath import exists
+import os
 import pickle
 
 
 class Store(ABC):
+    DATA_FOLDER = './data/'
+
     @abstractmethod
     def __init__(self, store_file_name: str, inject_data_func=None):
-        self.__file_path = './data/' + store_file_name + '.dat'
+        self.__file_path = self.DATA_FOLDER + store_file_name + '.dat'
         self.__data = {}
         self.exists = True
         self.create_if_not_exist(inject_data_func)
         self.load()
 
     def create_if_not_exist(self, inject_data_func=None):
+        folder_exists = exists(self.DATA_FOLDER)
+        if (not folder_exists):
+            os.mkdir(self.DATA_FOLDER)
+
         file_exists = exists(self.__file_path)
         if (not file_exists):
             self.save()

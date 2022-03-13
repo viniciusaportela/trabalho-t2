@@ -6,23 +6,32 @@ from models.event_model import Event
 
 
 class EventStore(Store):
-    def __init__(self):
-        super().__init__('events', self.__inject_data)
+    def __init__(self, controllers_manager):
+        print('event_store init')
+        super().__init__('events', self.create_inject_data(controllers_manager))
 
-    def __inject_data(self):
-        organizer = OrganizerStore.get('12312312399')
-        local = LocalStore.get('Shopping Trindade')
+    def create_inject_data(self, controllers_manager):
+        def __inject_data():
+            print('__inject_data')
+            organizer = controllers_manager.organizer.store.get(
+                '12312312399')
+            local = controllers_manager.local.store.get(
+                'Shopping Trindade')
 
-        event1 = Event(
-            'E', 25, local, '01/01/2020 17:30', [organizer])
-        event2 = Event('E2', 10, local, '22/02/2022 17:30', [organizer])
-        event3 = Event('E3', 10, local, '22/04/2022 17:30', [organizer])
+            event1 = Event(
+                'E', 25, [], local, datetime(2020, 1, 1, 17, 30), [organizer])
+            event2 = Event('E2', 10, [], local,
+                           datetime(2022, 2, 22, 17, 30), [organizer])
+            event3 = Event('E3', 10, [], local,
+                           datetime(2022, 4, 22, 17, 30), [organizer])
 
-        self.add(event1)
-        self.add(event2)
-        self.add(event3)
+            self.add(event1)
+            self.add(event2)
+            self.add(event3)
 
-        super().save()
+            self.save()
+
+        return __inject_data
 
     def add(self, event: Event):
         super().add(event.title, event)

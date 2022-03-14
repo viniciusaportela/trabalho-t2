@@ -147,9 +147,9 @@ class OrganizersView(UIView):
 
         while (True):
             button, values = self.window.read()
-            self.close()
 
             if (button is None or button == 'exit'):
+                self.close()
                 raise(UserExitException)
 
             if (button == 'confirm' and len(selected_organizers) == 0):

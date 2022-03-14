@@ -85,8 +85,12 @@ class EventsController:
     def open_edit_event(self):
         try:
             event = self.open_select_event()
-            event_data = self.view.show_register_event(True)
+
+            event_data = self.view.show_register_event(event.to_raw())
+            self.view.close()
+
             organizers = self.__controllers_manager.organizer.open_select_many_organizers()
+
             local = self.__controllers_manager.local.open_select_local()
 
             self.edit_event(
@@ -94,7 +98,7 @@ class EventsController:
                 event_data["max_participants"],
                 event.participants,
                 local,
-                event_data["event_date"],
+                event_data["datetime"],
                 organizers
             )
 
@@ -262,13 +266,13 @@ class EventsController:
                         'O usuário precisa de alguma confirmação que não possui covid!')
                     return
 
-                if (user['has_covid']):
+                if (user.pcr_exam.has_covid):
                     self.view.show_message(
                         'O usuário não pode participar do evento com covid')
                     return
 
-                final_validate = user['pcr_exam_date'] + timedelta(days=3)
-                if event.datetime < final_validate:
+                final_validate = user.pcr_exam.date + timedelta(days=3)
+                if event.datetime > final_validate:
                     self.view.show_message(
                         'A validade do exame do usuário acaba antes do evento ocorrer')
                     return
@@ -362,11 +366,21 @@ class EventsController:
                 return bool(participant_assoc.time_leave)
         return False
 
-    def update_user_reference(self, user):
-        for event_index, event in enumerate(self.__events):
+    def reflect_user_edit(self, user):
+        events = self.store.list()
+        for key in events:
+            event = events[key]
             for participant_index, participant_assoc in enumerate(event.participants):
                 if (participant_assoc.participant.cpf == user.cpf):
-                    self.__events[event_index].participants[participant_index].participant = user
+                    event.participants[participant_index].participant = user
+                    self.edit_event(
+                        event.title,
+                        event.max_participants,
+                        event.participants,
+                        event.local,
+                        event.datetime,
+                        event.organizers
+                    )
 
     def open_select_event(self):
         while True:

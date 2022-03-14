@@ -73,7 +73,9 @@ class LocalsController:
     def open_edit_local(self):
         try:
             local = self.open_select_local()
-            address_data = self.__controllers_manager.address.view.show_register_address()
+            address_data = self.__controllers_manager.address.view.show_register_address(
+                local.address.to_raw())
+            self.__controllers_manager.address.view.close()
 
             self.edit_local(
                 local.name,

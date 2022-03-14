@@ -118,7 +118,8 @@ class UserView(UIView):
             }
 
             if (user_data['has_pcr_exam']):
-                defaults['pcr_exam_result'] = user_data['pcr_exam']['has_covid'] if user_data['pcr_exam']['has_covid'] != None else '--',
+                defaults['pcr_exam_result'] = ('positivo' if user_data['pcr_exam']['has_covid']
+                                               else 'negativo') if user_data['pcr_exam']['has_covid'] != None else '--',
                 defaults['pcr_exam_date'] = user_data['pcr_exam']['pcr_exam_date']
         else:
             defaults = {

@@ -26,7 +26,7 @@ class OrganizersController:
 
         organizer.name = name
         organizer.birthday = birthday
-        organizer.cep = cep
+        organizer.address.cep = cep
         organizer.address.street = street
         organizer.address.number = number
         organizer.address.complement = complement
@@ -98,7 +98,8 @@ class OrganizersController:
             organizer_data = self.view.show_organizer_register(
                 organizer.to_raw(address_str=False))
 
-            address_data = self.__controllers_manager.address.view.show_register_address()
+            address_data = self.__controllers_manager.address.view.show_register_address(
+                organizer.address.to_raw())
             self.__controllers_manager.address.view.close()
 
             self.edit_organizer(

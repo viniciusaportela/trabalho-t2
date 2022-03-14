@@ -38,7 +38,7 @@ class UsersController:
 
         user.name = name
         user.birthday = birthday
-        user.cep = cep
+        user.address.cep = cep
         user.address.street = street
         user.address.number = number
         user.address.complement = complement
@@ -48,6 +48,8 @@ class UsersController:
             user.pcr_exam = PCRExam(has_covid, pcr_exam_date)
 
         self.store.update(user)
+
+        self.__controllers_manager.event.reflect_user_edit(user)
 
     def remove_user(self, cpf):
         self.store.remove(cpf)
@@ -127,7 +129,7 @@ class UsersController:
                 return False
 
             final_validate = user.pcr_exam.date + timedelta(days=3)
-            if event.datetime < final_validate:
+            if event.datetime > final_validate:
                 return False
 
         return True

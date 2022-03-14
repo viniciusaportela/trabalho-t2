@@ -54,7 +54,7 @@ class EventsView(UIView):
                 self.show_error_message('Max Participantes deve ser um número')
                 continue
 
-            if (str(values['max_participants']) <= 0):
+            if (int(values['max_participants']) <= 0):
                 self.show_error_message(
                     'O número máximo de participantes deve ser maior que 0')
                 continue
@@ -80,6 +80,8 @@ class EventsView(UIView):
                 int(hour_split[1])
             )
             values['datetime'] = datetime_final
+
+            values['max_participants'] = int(values['max_participants'])
 
             return values
 
@@ -203,7 +205,6 @@ class EventsView(UIView):
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
     def show_participants_list(self, title, participants_assoc, hide_covid_proof=False):
-        print(participants_assoc)
         self.__mount_participants_list(
             title, participants_assoc, hide_covid_proof)
         self.window.read()

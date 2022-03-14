@@ -23,7 +23,7 @@ class Event:
         return {
             "title": self.title,
             "max_participants": self.max_participants,
-            "datetime": self.datetime,
+            "datetime": self.datetime.strftime('%d/%m/%Y %H:%M'),
             "participants": raw_participants,
             "local": self.local.to_raw(),
             "organizers": organizers_str,

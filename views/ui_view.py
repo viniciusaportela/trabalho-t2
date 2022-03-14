@@ -9,6 +9,7 @@ class UIView:
     def show_error_message(self, error_message: str) -> None:
         error_message_exists = not isinstance(self.window.find_element(
             'error_message', silent_on_error=True), ErrorElement)
+
         if (self.window and error_message_exists):
             self.window.find_element(
                 'error_message', silent_on_error=True).update(error_message, background_color='#f5254b')

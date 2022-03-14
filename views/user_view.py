@@ -92,7 +92,7 @@ class UserView(UIView):
                 )
                 values['pcr_exam_date'] = pcr_exam_date
 
-                if (values['pcr_exam_result'] != 'positivo' and values['pcr_exam_result' != 'negativo']):
+                if (values['pcr_exam_result'] != 'positivo' and values['pcr_exam_result'] != 'negativo'):
                     self.show_error_message(
                         'O resultado do exame deve ser positivo ou negativo')
                     continue
@@ -149,7 +149,7 @@ class UserView(UIView):
                       default_value=defaults['pcr_exam_result'], key='pcr_exam_result')],
             [sg.Text('Data exame PCR (dia/mes/ano) (se fez):')],
             [sg.Input(defaults['pcr_exam_date'], key='pcr_exam_date')],
-            [sg.Submit('Registar'), sg.Button(
+            [sg.Submit('Cadastrar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)

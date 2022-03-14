@@ -148,17 +148,21 @@ class OrganizersController:
                 self.view.show_message('Organizador não encontrado!')
 
     def open_select_many_organizers(self):
+        organizers = []
+        raw_organizers = []
+
         while True:
-            organizers = []
+            button, values = self.view.show_find_many_organizers(
+                raw_organizers)
+            self.view.close()
 
-            button, values = self.view.show_find_many_organizers(organizers)
-
-            if (button == 'confirm' and len(organizers > 0)):
+            if (button == 'confirm'):
                 return organizers
 
             organizer = self.get_organizer_by_cpf(values['cpf'])
 
             if (organizer):
-                organizers.append(organizer.to_raw())
+                organizers.append(organizer)
+                raw_organizers.append(organizer.to_raw())
             else:
                 self.view.show_message('Organizador não encontrado!')

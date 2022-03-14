@@ -63,21 +63,22 @@ class EventsController:
     def open_register_event(self):
         try:
             event_data = self.view.show_register_event()
+            self.view.close()
 
             organizers = self.__controllers_manager.organizer.open_select_many_organizers()
 
             local = self.__controllers_manager.local.open_select_local()
 
             self.add_event(
-                event_data['name'],
+                event_data['title'],
                 event_data['max_participants'],
                 local,
-                event_data['event_date'],
+                event_data['datetime'],
                 organizers
             )
 
             self.view.show_message('Evento adicionado!')
-        except:
+        except UserExitException:
             self.view.close()
             return
 
@@ -162,7 +163,7 @@ class EventsController:
             }
 
             while True:
-                option = self.view.show_event_menu(event)
+                option = self.view.show_event_menu(event.to_raw())
                 bindings[option](event)
         except UserExitException:
             self.view.close()

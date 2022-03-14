@@ -47,7 +47,7 @@ class UsersController:
         if (has_covid != None and pcr_exam_date != None):
             user.pcr_exam = PCRExam(has_covid, pcr_exam_date)
 
-        self.store.update(cpf, user)
+        self.store.update(user)
 
     def remove_user(self, cpf):
         self.store.remove(cpf)
@@ -137,8 +137,10 @@ class UsersController:
 
             user_data = self.view.show_user_register(
                 user.to_raw(address_str=False))
+            self.view.close()
 
-            address_data = self.__controllers_manager.address.view.show_register_address()
+            address_data = self.__controllers_manager.address.view.show_register_address(
+                user.address.to_raw())
             self.__controllers_manager.address.view.close()
 
             self.edit_user(

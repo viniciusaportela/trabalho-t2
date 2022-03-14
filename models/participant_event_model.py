@@ -13,7 +13,6 @@ class ParticipantEvent:
 
     def to_raw(self):
         return {
-            "event": self.event.to_raw(),
             "participant": self.participant.to_raw(),
             "time_entrance": self.__get_formatted_hour(self.time_entrance),
             "time_leave": self.__get_formatted_hour(self.time_leave),

@@ -154,8 +154,8 @@ class UserView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
-    def show_find_user(self):
-        self.__mount_find_user_window()
+    def show_find_user(self, title='Encontrar pessoa'):
+        self.__mount_find_user_window(title)
 
         while (True):
             button, values = self.window.read()
@@ -169,9 +169,9 @@ class UserView(UIView):
 
             return values
 
-    def __mount_find_user_window(self):
+    def __mount_find_user_window(self, title):
         layout = [
-            [sg.Text('Encontrar pessoa')],
+            [sg.Text(title)],
             [sg.Text('', key='error_message')],
             [sg.Text('CPF')],
             [sg.Input(key='cpf')],

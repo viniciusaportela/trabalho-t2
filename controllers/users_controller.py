@@ -185,9 +185,9 @@ class UsersController:
 
         self.view.show_user_details(user.to_raw())
 
-    def open_select_user(self):
+    def open_select_user(self, title='Encontrar pessoa'):
         while True:
-            input_find = self.view.show_find_user()
+            input_find = self.view.show_find_user(title)
             self.view.close()
 
             user = self.get_user_by_cpf(input_find['cpf'])

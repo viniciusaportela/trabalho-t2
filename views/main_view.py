@@ -30,7 +30,6 @@ class MainView:
     def show_menu(self):
         self.__mount_window()
         button, _ = self.__window.read()
-        print('show_menu', button)
         self.close()
 
         if (button is None or button == 'exit'):

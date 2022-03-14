@@ -104,23 +104,19 @@ class EventsController:
             return
 
     def open_add_participant_to_event(self, event):
-        print('-----------= Cadastrar pessoa em evento =-----------')
-
         current = date.now()
         if (event.datetime <= current):
-            print('Esse evento ja finalizou!')
+            self.view.show_message('Esse evento já finalizou!')
             return
 
         if (len(event.participants) >= event.max_participants):
-            print('Esse evento ja esta cheio!')
+            self.view.show_message('Esse evento já esta cheio!')
             return
 
-        user = self.__controllers_manager.user.open_select_user()
-        if (user == None):
-            return
+        user = self.__controllers_manager.user.open_select_user(
+            'Cadastrar Participante')
 
         user_event = ParticipantEvent(event, user, None, None)
-
         event.participants.append(user_event)
 
         self.edit_event(
@@ -128,11 +124,11 @@ class EventsController:
             event.max_participants,
             event.participants,
             event.local,
-            event.datetime.strftime('%d/%m/%Y %H:%M'),
+            event.datetime,
             event.organizers
         )
 
-        print('Usuario adicionado ao evento!')
+        self.view.show_message('Usuário adicionado ao evento!')
 
     def open_delete_event(self):
         event = self.open_select_event()
@@ -173,9 +169,14 @@ class EventsController:
         participants_data = []
 
         for participant_assoc in event.participants:
-            participants_data.append(participant_assoc.to_raw())
+            raw_participant_assoc = participant_assoc.to_raw()
+            raw_participant_assoc['participant']['has_covid_proof'] = self.__controllers_manager.user.can_participant_event(
+                participant_assoc.participant, event)
+            participants_data.append(raw_participant_assoc)
 
-        self.view.show_participants_list(participants_data)
+        self.view.show_participants_list(
+            'Participantes do evento', participants_data)
+        self.view.close()
 
     def edit_participant(self, event, participant_cpf, time_entrance=None, time_leave=None):
         for index, participant_assoc in enumerate(event.participants):
@@ -196,10 +197,12 @@ class EventsController:
                 participant.has_two_vaccines or (
                     participant.pcr_exam.date and not participant.pcr_exam.has_covid)
             ):
-                participants_with_covid_proof.append(participant_assoc)
+                participants_with_covid_proof.append(
+                    participant_assoc.to_raw())
 
         self.view.show_participants_list(
-            participants_with_covid_proof, '-----------= Participantes com comprovacao Covid =-----------')
+            'Participantes com comprovação Covid', participants_with_covid_proof, True)
+        self.view.close()
 
     def open_participants_without_covid_proof(self, event):
         participants = event.participants
@@ -210,95 +213,113 @@ class EventsController:
                 not self.__controllers_manager.user.can_participant_event(
                     participant, event)
             ):
-                participants_without_covid_proof.append(participant_assoc)
+                participants_without_covid_proof.append(
+                    participant_assoc.to_raw())
 
         self.view.show_participants_list(
-            participants_without_covid_proof, '-----------= Participantes sem comprovacao Covid =-----------')
+            'Participantes sem comprovação Covid', participants_without_covid_proof, True)
+        self.view.close()
 
     def open_register_entrance(self, event):
-        print('-----------= Cadastrar Entrada =-----------')
-        user = self.__controllers_manager.user.open_select_user()
-        if (user == None):
-            return
+        try:
+            user = self.__controllers_manager.user.open_select_user(
+                'Cadastrar Entrada')
+            self.__controllers_manager.user.view.close()
 
-        user_is_in_event = self.__user_is_in_event(user, event)
+            user_is_in_event = self.__user_is_in_event(user, event)
 
-        if (not user_is_in_event):
-            print('Esse usuario nao esta cadastrado nesse evento!')
-            return
-
-        already_register_entrance = self.__already_register_hour_entrance(
-            user, event)
-        if (already_register_entrance):
-            print('Esse usuario ja esta no evento!')
-            return
-
-        if (not user.has_two_vaccines):
-            if (user.pcr_exam.date == None):
-                print('O usuario precisa de alguma confirmacao que nao possui covid!')
+            if (not user_is_in_event):
+                self.view.show_message(
+                    'Esse usuário nao esta cadastrado nesse evento!')
                 return
 
-            if (user['has_covid']):
-                print('O usuario nao pode participar do evento com covid')
+            already_register_entrance = self.__already_register_hour_entrance(
+                user, event)
+            if (already_register_entrance):
+                self.view.show_message('Esse usuário já esta no evento!')
                 return
 
-            final_validate = user['pcr_exam_date'] + timedelta(days=3)
-            if event.datetime < final_validate:
-                print('A validade do exame do usuario acaba antes do evento ocorrer')
-                return
+            if (not user.has_two_vaccines):
+                if (user.pcr_exam.date == None):
+                    self.view.show_message(
+                        'O usuário precisa de alguma confirmação que não possui covid!')
+                    return
 
-        valid_hour = False
-        while not valid_hour:
-            entrance_hour, entrance_minute = self.view.show_get_hour()
-            entrance_date = date(event.datetime.year, event.datetime.month,
-                                 event.datetime.day, entrance_hour, entrance_minute)
+                if (user['has_covid']):
+                    self.view.show_message(
+                        'O usuário não pode participar do evento com covid')
+                    return
 
-            if (entrance_date >= event.datetime):
-                valid_hour = True
-            else:
-                print(
-                    'O horario de entrada deve ser posterior ou igual ao horario do evento')
+                final_validate = user['pcr_exam_date'] + timedelta(days=3)
+                if event.datetime < final_validate:
+                    self.view.show_message(
+                        'A validade do exame do usuário acaba antes do evento ocorrer')
+                    return
 
-        self.edit_participant(event, user.cpf, entrance_date)
+            valid_hour = False
+            while not valid_hour:
+                entrance_hour, entrance_minute = self.view.show_get_hour(
+                    'Cadastrar Entrada (' + event.datetime.strftime('%d/%m/%Y %H:%M') + ')')
+                self.view.close()
+                entrance_date = date(event.datetime.year, event.datetime.month,
+                                     event.datetime.day, entrance_hour, entrance_minute)
+
+                if (entrance_date >= event.datetime):
+                    valid_hour = True
+                else:
+                    self.view.show_message(
+                        'O horário de entrada deve ser posterior ou igual ao horário do evento')
+
+            self.edit_participant(event, user.cpf, entrance_date)
+        except UserExitException:
+            return
 
     def open_register_leave(self, event):
-        print('-----------= Cadastrar Saida =-----------')
-        user = self.__controllers_manager.user.open_select_user()
-        if (user == None):
+        try:
+            user = self.__controllers_manager.user.open_select_user(
+                'Cadastrar Saída')
+            self.__controllers_manager.user.view.close()
+
+            user_is_in_event = self.__user_is_in_event(user, event)
+
+            if (not user_is_in_event):
+                self.view.show_message(
+                    'Esse usuário não esta cadastrado nesse evento!')
+                return
+
+            register_entrance = self.__already_register_hour_entrance(
+                user, event)
+            if (not register_entrance):
+                self.view.show_message(
+                    'Esse usuário não entrou no evento para sair!')
+                return
+
+            already_register_leave = self.__already_register_hour_leave(
+                user, event)
+            if (already_register_leave):
+                self.view.show_message('Esse usuário ja saiu do evento!')
+                return
+
+            valid_hour = False
+            leave_date = None
+            entrance_hour = self.__get_participant_assoc_hour_entrance(
+                user, event)
+            while not valid_hour:
+                leave_hour, leave_minute = self.view.show_get_hour(
+                    'Cadastrar Saída')
+                self.view.close()
+                leave_date = date(event.datetime.year, event.datetime.month,
+                                  event.datetime.day, leave_hour, leave_minute)
+
+                if (leave_date >= entrance_hour):
+                    valid_hour = True
+                else:
+                    self.view.show_message(
+                        'O horário de saída deve ser posterior ou igual o horário de entrada')
+
+            self.edit_participant(event, user.cpf, None, leave_date)
+        except UserExitException:
             return
-
-        user_is_in_event = self.__user_is_in_event(user, event)
-
-        if (not user_is_in_event):
-            print('Esse usuario nao esta cadastrado nesse evento!')
-            return
-
-        register_entrance = self.__already_register_hour_entrance(user, event)
-        if (not register_entrance):
-            print('Esse usuario nao entrou no evento para sair!')
-            return
-
-        already_register_leave = self.__already_register_hour_leave(
-            user, event)
-        if (already_register_leave):
-            print('Esse usuario ja saiu do evento!')
-            return
-
-        valid_hour = False
-        leave_date = None
-        entrance_hour = self.__get_participant_assoc_hour_entrance(user, event)
-        while not valid_hour:
-            leave_hour, leave_minute = self.view.show_get_hour()
-            leave_date = date(event.datetime.year, event.datetime.month,
-                              event.datetime.day, leave_hour, leave_minute)
-
-            if (leave_date >= entrance_hour):
-                valid_hour = True
-            else:
-                print(
-                    'O horario de saida deve ser posterior ou igual o horario de entrada')
-
-        self.edit_participant(event, user.cpf, None, leave_date)
 
     def __user_is_in_event(self, user, event):
         for participant_assoc in event.participants:

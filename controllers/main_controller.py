@@ -22,9 +22,7 @@ class MainController:
                 }
 
                 option = self.view.show_menu()
-                print('option', option)
                 bindings[option]()
-                print('after bindings[option]')
         except UserExitException:
             return
         except Exception:

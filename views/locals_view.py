@@ -8,12 +8,10 @@ from views.ui_view import UIView
 class LocalsView(UIView):
     def __init__(self):
         super().__init__()
-        print(self.window)
 
     def show_locals_menu(self):
         self.__mount_menu_window()
         button, _ = self.window.read()
-        print('show_locals_menu', button, _, self.window)
         self.close()
 
         if (button is None or button == 'exit'):

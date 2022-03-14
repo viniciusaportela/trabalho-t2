@@ -85,7 +85,6 @@ class LocalsController:
 
     def open_local_list(self):
         locals = self.get_locals()
-        print(locals)
 
         locals_data = []
         for key in locals:

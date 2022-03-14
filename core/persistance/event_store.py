@@ -7,12 +7,10 @@ from models.event_model import Event
 
 class EventStore(Store):
     def __init__(self, controllers_manager):
-        print('event_store init')
         super().__init__('events', self.create_inject_data(controllers_manager))
 
     def create_inject_data(self, controllers_manager):
         def __inject_data():
-            print('__inject_data')
             organizer = controllers_manager.organizer.store.get(
                 '12312312399')
             local = controllers_manager.local.store.get(

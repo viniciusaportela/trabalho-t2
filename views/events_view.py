@@ -1,7 +1,7 @@
 from datetime import datetime
 from core.exceptions.user_exit_exception import UserExitException
 from core.constants import DEFAULT_TITLE
-from core.utils.date_validator import validate_date, validate_datetime, validate_time
+from core.utils.date_validator import validate_datetime, validate_time
 from views.ui_view import UIView
 import PySimpleGUI as sg
 
@@ -166,7 +166,7 @@ class EventsView(UIView):
                        key='list_participants_with_covid_proof', size=(30, None))],
             [sg.Button('Listar participantes sem comprovação Covid',
                        key='list_participants_without_covid_proof', size=(30, None))],
-            [sg.Button('Listar entrada',
+            [sg.Button('Registrar entrada',
                        key='register_entrance', size=(30, None))],
             [sg.Button('Registrar saída',
                        key='register_leave', size=(30, None))],
@@ -201,32 +201,43 @@ class EventsView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_participants_list(self, participants_assoc):
-        self.__mount_participants_list(participants_assoc)
+    def show_participants_list(self, title, participants_assoc, hide_covid_proof=False):
+        print(participants_assoc)
+        self.__mount_participants_list(
+            title, participants_assoc, hide_covid_proof)
         self.window.read()
 
-    def __mount_participants_list(self, participant_assoc):
+    def __mount_participants_list(self, title, participants_assoc, hide_covid_proof=False):
         values = []
         headings = ['Nome', 'CPF', 'Aniversario',
-                    'Endereco', 'Tem comprovação Covid']
-        for participant in participant_assoc:
-            values.append([
-                participant['name'],
-                participant['cpf'],
-                participant['birthday'],
-                participant['address'],
-                'Sim' if participant['has_covid_proof'] else 'Não'
-            ])
+                    'Endereco']
+
+        if (not hide_covid_proof):
+            headings.append('Tem comprovação Covid')
+
+        for participant_assoc in participants_assoc:
+            arr = [
+                participant_assoc['participant']['name'],
+                participant_assoc['participant']['cpf'],
+                participant_assoc['participant']['birthday'],
+                participant_assoc['participant']['address'],
+            ]
+
+            if (not hide_covid_proof):
+                arr.append(
+                    'Sim' if participant_assoc['participant']['has_covid_proof'] else 'Não')
+
+            values.append(arr)
 
         layout = [
-            [sg.Text('Lista de Pessoas')],
+            [sg.Text(title)],
             [sg.Table(values=values, headings=headings)],
             [sg.Submit('Voltar')]
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_get_hour(self):
-        self.__mount_show_get_hour()
+    def show_get_hour(self, title):
+        self.__mount_show_get_hour(title)
 
         while True:
             button, values = self.window.read()
@@ -245,9 +256,11 @@ class EventsView(UIView):
 
             return hour, minute
 
-    def __mount_show_get_hour(self):
+    def __mount_show_get_hour(self, title):
         layout = [
-            [sg.Text('Horário')],
+            [sg.Text(title)],
+            [sg.Text('', key='error_message')],
+            [sg.Text('Horário (hora:min):')],
             [sg.Input(key='hour')],
             [sg.Submit('Confirmar'), sg.Button('Cancelar', key='exit')]
         ]

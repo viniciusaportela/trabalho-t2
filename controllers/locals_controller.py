@@ -9,17 +9,17 @@ class LocalsController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
         self.view = LocalsView()
-        self.__store = LocalStore()
+        self.store = LocalStore()
 
     def get_locals(self):
-        return self.__store.list()
+        return self.store.list()
 
     def get_local_by_name(self, name):
-        return self.__store.get(name)
+        return self.store.get(name)
 
     def add_local(self, name, cep, street, number, complement):
         local = Local(name, cep, street, number, complement)
-        self.__store.add(local)
+        self.store.add(local)
 
     def edit_local(self, name, cep, street, number, complement):
         local = self.get_local_by_name(name)
@@ -29,10 +29,10 @@ class LocalsController:
         local.address.number = number
         local.address.complement = complement
 
-        self.__store.update(local)
+        self.store.update(local)
 
     def delete_local(self, name):
-        self.__store.remove(name)
+        self.store.remove(name)
 
     def open_locals_menu(self):
         try:

@@ -3,6 +3,7 @@ from core.persistance.local_store import LocalStore
 from core.persistance.organizer_store import OrganizerStore
 from core.persistance.store import Store
 from models.event_model import Event
+from models.local_model import Local
 
 
 class EventStore(Store):
@@ -32,6 +33,7 @@ class EventStore(Store):
         return __inject_data
 
     def add(self, event: Event):
+        self.__validate_model(event)
         super().add(event.title, event)
         super().save()
 
@@ -40,6 +42,7 @@ class EventStore(Store):
         super().save()
 
     def update(self, event: Event):
+        self.__validate_model(event)
         super().update(event.title, event)
         super().save()
 
@@ -48,3 +51,17 @@ class EventStore(Store):
 
     def get(self, title):
         return super().get(title)
+
+    def __validate_model(self, event: Event):
+        if not (isinstance(event, Event)):
+            return False
+
+        if (
+            not (type(event.title) is str) or
+            not (type(event.max_participants) is int) or
+            not (isinstance(event.local, Local)) or
+            not (type(event.datetime) is datetime)
+        ):
+            return False
+
+        return True

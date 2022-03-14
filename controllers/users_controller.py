@@ -12,30 +12,32 @@ from models.participant_model import Participant
 class UsersController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
-        self.__store = ParticipantStore()
+        self.store = ParticipantStore()
         self.view = UserView()
 
     def get_users(self):
-        return self.__store.list()
+        return self.store.list()
 
-    def get_user_by_cpf(self, cpf):
-        return self.__store.get(cpf)
+    def get_user_by_cpf(self, cpf, silent_on_error=False):
+        user = self.store.get(cpf)
+
+        if (user == None and not silent_on_error):
+            raise NotExistsException('usuário')
+
+        return user
 
     def add_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
-        already_has_user = self.get_user_by_cpf(cpf)
+        already_has_user = self.get_user_by_cpf(cpf, silent_on_error=True)
 
         if (already_has_user):
             raise(AlreadyExistsException('participante'))
 
         user = Participant(cpf, name, birthday, cep, street, number,
                            complement, has_two_vaccines, has_covid, pcr_exam_date)
-        self.__store.add(user)
+        self.store.add(user)
 
     def edit_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
         user = self.get_user_by_cpf(cpf)
-
-        if (not user):
-            raise(NotExistsException('participante'))
 
         user.name = name
         user.birthday = birthday
@@ -48,12 +50,13 @@ class UsersController:
         if (has_covid != None and pcr_exam_date != None):
             user.pcr_exam = PCRExam(has_covid, pcr_exam_date)
 
-        self.__store.update(user)
+        self.store.update(user)
 
         self.__controllers_manager.event.reflect_user_edit(user)
 
     def remove_user(self, cpf):
-        self.__store.remove(cpf)
+        self.get_user_by_cpf(cpf)
+        self.store.remove(cpf)
 
     def set_covid_status(self, cpf, has_two_vaccines, has_covid, pcr_exam_date):
         user, index = self.get_user_by_cpf(cpf)
@@ -91,7 +94,8 @@ class UsersController:
                 user_data = self.view.show_user_register(remount=first_loop)
                 first_loop = False
 
-                already_has_user = self.get_user_by_cpf(user_data['cpf'])
+                already_has_user = self.get_user_by_cpf(
+                    user_data['cpf'], silent_on_error=True)
                 if (already_has_user != None):
                     self.view.show_error_message('Esse CPF ja foi cadastrado!')
                     continue
@@ -118,6 +122,10 @@ class UsersController:
 
             self.view.show_message('Usuário adicionado!')
         except UserExitException:
+            self.view.close()
+            return
+        except AlreadyExistsException:
+            self.view.show_message('Esse CPF ja foi cadastrado!')
             self.view.close()
             return
 
@@ -164,6 +172,10 @@ class UsersController:
         except (UserExitException, EmptyStoreException):
             self.view.close()
             return
+        except (NotExistsException):
+            self.view.show_message('Usuário não existe!')
+            self.view.close()
+            return
 
     def open_remove_user(self):
         try:
@@ -175,13 +187,17 @@ class UsersController:
         except (UserExitException, EmptyStoreException):
             self.view.close()
             return
+        except (NotExistsException):
+            self.view.show_message('Usuário não existe!')
+            self.view.close()
+            return
 
     def open_user_list(self):
         users = self.get_users()
 
         data_users = []
         for cpf in users:
-            user = self.get_user_by_cpf(cpf)
+            user = self.get_user_by_cpf(cpf, silent_on_error=True)
             raw_user = user.to_raw()
             data_users.append(raw_user)
 
@@ -217,7 +233,7 @@ class UsersController:
             input_find = self.view.show_find_user(users_raw, title)
             cpf = get_cpf_by_option_str(input_find['user'])
 
-            user = self.get_user_by_cpf(cpf)
+            user = self.get_user_by_cpf(cpf, silent_on_error=True)
 
             if (user):
                 return user

@@ -10,14 +10,14 @@ from core.exceptions.user_exit_exception import UserExitException
 class EventsController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
+        self.__store = EventStore(controllers_manager)
         self.view = EventsView()
-        self.store = EventStore(controllers_manager)
 
     def get_events(self):
-        return self.store.list()
+        return self.__store.list()
 
     def get_event_by_title(self, title):
-        return self.store.get(title)
+        return self.__store.get(title)
 
     def add_event(self, title, max_participants, local, datetime, organizers):
         already_has_event = self.get_event_by_title(title)
@@ -28,7 +28,7 @@ class EventsController:
         event = Event(title, max_participants, [],
                       local, datetime, organizers)
 
-        self.store.add(event)
+        self.__store.add(event)
 
     def edit_event(self, title, max_participants, participants, local, datetime, organizers):
         event = self.get_event_by_title(title)
@@ -39,10 +39,10 @@ class EventsController:
         event.datetime = datetime
         event.organizers = organizers
 
-        self.store.update(event)
+        self.__store.update(event)
 
     def remove_event(self, title):
-        self.store.remove(title)
+        self.__store.remove(title)
 
     def open_events_menu(self):
         try:
@@ -367,7 +367,7 @@ class EventsController:
         return False
 
     def reflect_user_edit(self, user):
-        events = self.store.list()
+        events = self.__store.list()
         for key in events:
             event = events[key]
             for participant_index, participant_assoc in enumerate(event.participants):

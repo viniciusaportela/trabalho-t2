@@ -8,18 +8,18 @@ class OrganizersController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
         self.view = OrganizersView()
-        self.store = OrganizerStore()
+        self.__store = OrganizerStore()
 
     def get_organizers(self):
-        return self.store.list()
+        return self.__store.list()
 
     def get_organizer_by_cpf(self, cpf):
-        return self.store.get(cpf)
+        return self.__store.get(cpf)
 
     def add_organizer(self, cpf, name, birthday, cep, street, number, complement):
         organizer = Organizer(cpf, name, birthday, cep,
                               street, number, complement)
-        self.store.add(organizer)
+        self.__store.add(organizer)
 
     def edit_organizer(self, cpf, name, birthday, cep, street, number, complement):
         organizer = self.get_organizer_by_cpf(cpf)
@@ -31,10 +31,10 @@ class OrganizersController:
         organizer.address.number = number
         organizer.address.complement = complement
 
-        self.store.update(organizer)
+        self.__store.update(organizer)
 
     def remove_organizer(self, cpf):
-        self.store.remove(cpf)
+        self.__store.remove(cpf)
 
     def open_organizers_menu(self):
         try:

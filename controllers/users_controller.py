@@ -11,14 +11,14 @@ from models.participant_model import Participant
 class UsersController:
     def __init__(self, controllers_manager):
         self.__controllers_manager = controllers_manager
+        self.__store = ParticipantStore()
         self.view = UserView()
-        self.store = ParticipantStore()
 
     def get_users(self):
-        return self.store.list()
+        return self.__store.list()
 
     def get_user_by_cpf(self, cpf):
-        return self.store.get(cpf)
+        return self.__store.get(cpf)
 
     def add_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
         already_has_user = self.get_user_by_cpf(cpf)
@@ -28,7 +28,7 @@ class UsersController:
 
         user = Participant(cpf, name, birthday, cep, street, number,
                            complement, has_two_vaccines, has_covid, pcr_exam_date)
-        self.store.add(user)
+        self.__store.add(user)
 
     def edit_user(self, cpf, name, birthday, cep, street, number, complement, has_two_vaccines=None, has_covid=None, pcr_exam_date=None):
         user = self.get_user_by_cpf(cpf)
@@ -47,12 +47,12 @@ class UsersController:
         if (has_covid != None and pcr_exam_date != None):
             user.pcr_exam = PCRExam(has_covid, pcr_exam_date)
 
-        self.store.update(user)
+        self.__store.update(user)
 
         self.__controllers_manager.event.reflect_user_edit(user)
 
     def remove_user(self, cpf):
-        self.store.remove(cpf)
+        self.__store.remove(cpf)
 
     def set_covid_status(self, cpf, has_two_vaccines, has_covid, pcr_exam_date):
         user, index = self.get_user_by_cpf(cpf)

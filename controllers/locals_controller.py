@@ -119,10 +119,17 @@ class LocalsController:
 
     def open_select_local(self):
         while True:
-            values = self.view.show_find_local()
+            locals = self.get_locals()
+
+            locals_raw = []
+            for key in locals:
+                local = locals[key]
+                locals_raw.append(local.to_raw())
+
+            values = self.view.show_find_local(locals_raw)
             self.view.close()
 
-            local = self.get_local_by_name(values['name'])
+            local = self.get_local_by_name(values['local'])
 
             if (local):
                 return local

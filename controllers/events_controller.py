@@ -384,10 +384,16 @@ class EventsController:
 
     def open_select_event(self):
         while True:
-            input_find = self.view.show_find_event()
+            events = self.get_events()
+            events_raw = []
+            for key in events:
+                event = events[key]
+                events_raw.append(event.to_raw())
+
+            input_find = self.view.show_find_event(events_raw)
             self.view.close()
 
-            event = self.get_event_by_title(input_find['title'])
+            event = self.get_event_by_title(input_find['event'])
 
             if (event):
                 return event

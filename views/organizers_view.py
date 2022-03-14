@@ -115,55 +115,43 @@ class OrganizersView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
-    def show_find_organizer(self):
-        self.__mount_find_organizer_window()
+    def show_find_organizer(self, organizers):
+        self.__mount_find_organizer_window(organizers)
 
-        while (True):
-            button, values = self.window.read()
-            self.close()
+        button, values = self.window.read()
+        self.close()
 
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
 
-            if (values['cpf'].strip() == ''):
-                self.show_error_message('CPF não deve ser vazio')
-                continue
+        return values
 
-            return values
+    def __mount_find_organizer_window(self, organizers):
+        values = self.__mount_list(organizers)
 
-    def __mount_find_organizer_window(self):
         layout = [
             [sg.Text('Encontrar organizador')],
             [sg.Text('', key='error_message')],
-            [sg.Text('CPF')],
-            [sg.Input(key='cpf')],
+            [sg.Text('Organizador')],
+            [sg.Combo(values, default_value=values[0], key='organizer')],
             [sg.Submit('Procurar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_find_many_organizers(self, selected_organizers):
-        self.__mount_find_many_organizers_window(selected_organizers)
+    def show_find_many_organizers(self, organizers, selected_organizers):
+        self.__mount_find_many_organizers_window(
+            organizers, selected_organizers)
 
-        while (True):
-            button, values = self.window.read()
+        button, values = self.window.read()
 
-            if (button is None or button == 'exit'):
-                self.close()
-                raise(UserExitException)
+        if (button is None or button == 'exit'):
+            self.close()
+            raise(UserExitException)
 
-            if (button == 'confirm' and len(selected_organizers) == 0):
-                self.show_error_message(
-                    'Você deve selecionar ao menos um organizador')
-                continue
+        return button, values
 
-            if (button != 'confirm' and values['cpf'].strip() == ''):
-                self.show_error_message('CPF não deve ser vazio')
-                continue
-
-            return button, values
-
-    def __mount_find_many_organizers_window(self, selected_organizers):
+    def __mount_find_many_organizers_window(self, organizers, selected_organizers):
         def create_selected_organizers_str():
             text = ''
             for index, organizer in enumerate(selected_organizers):
@@ -172,13 +160,15 @@ class OrganizersView(UIView):
                     text += ', '
             return text
 
+        values = self.__mount_list(organizers)
+
         layout = [
             [sg.Text('Encontrar organizador')],
             [sg.Text('', key='error_message')],
             [sg.Text('Selecionados:')],
             [sg.Text(create_selected_organizers_str())],
-            [sg.Text('CPF:')],
-            [sg.Input(key='cpf')],
+            [sg.Text('Organizador:')],
+            [sg.Combo(values, default_value=values[0], key='organizer')],
             [sg.Submit('Procurar'), sg.Button(
                 'Confirmar esses organizadores', key='confirm'), sg.Button(
                 'Cancelar', key='exit')],
@@ -224,3 +214,9 @@ class OrganizersView(UIView):
         ]
 
         self.window = sg.Window(DEFAULT_TITLE, layout)
+
+    def __mount_list(self, organizers):
+        arr = []
+        for organizer in organizers:
+            arr.append(organizer['name'] + ' (' + organizer['cpf'] + ')')
+        return arr

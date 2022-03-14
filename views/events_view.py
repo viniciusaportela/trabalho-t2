@@ -177,28 +177,30 @@ class EventsView(UIView):
 
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_find_event(self):
-        self.__mount_find_event_window()
+    def show_find_event(self, events):
+        self.__mount_find_event_window(events)
 
-        while (True):
-            button, values = self.window.read()
-            self.close()
+        button, values = self.window.read()
+        self.close()
 
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
 
-            if (values['title'].strip() == ''):
-                self.show_error_message('Título não deve ser vazio')
-                continue
+        return values
 
-            return values
+    def __mount_find_event_window(self, events):
+        def mount_list():
+            arr = []
+            for event in events:
+                arr.append(event['title'])
+            return arr
+        values = mount_list()
 
-    def __mount_find_event_window(self):
         layout = [
             [sg.Text('Encontrar evento')],
             [sg.Text('', key='error_message')],
-            [sg.Text('Título:')],
-            [sg.Input(key='title')],
+            [sg.Text('Evento:')],
+            [sg.Combo(values, default_value=values[0], key='event')],
             [sg.Submit('Procurar'), sg.Button(
                 'Cancelar', key='exit')],
         ]

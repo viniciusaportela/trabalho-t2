@@ -58,31 +58,34 @@ class LocalsView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def __mount_find_local_window(self):
+    def show_find_local(self, locals):
+        self.__mount_find_local_window(locals)
+
+        button, values = self.window.read()
+        self.close()
+
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
+
+        return values
+
+    def __mount_find_local_window(self, locals):
+        def mount_list():
+            arr = []
+            for local in locals:
+                arr.append(local['name'])
+            return arr
+        values = mount_list()
+
         layout = [
             [sg.Text('Encontrar local')],
             [sg.Text('', key='error_message')],
-            [sg.Text('Nome')],
-            [sg.Input(key='name')],
-            [sg.Submit('Procurar'), sg.Button(
+            [sg.Text('Local:')],
+            [sg.Combo(values, default_value=values[0], key='local')],
+            [sg.Submit('Confirmar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
-
-    def show_find_local(self):
-        self.__mount_find_local_window()
-        while (True):
-            button, values = self.window.read()
-            self.close()
-
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
-
-            if (values['name'].strip() == ''):
-                self.show_error_message('Nome não deve ser vazio')
-                continue
-
-            return values
 
     def show_locals_list(self, locals):
         self.__mount_locals_list_window(locals)

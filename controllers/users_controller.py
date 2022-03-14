@@ -198,9 +198,21 @@ class UsersController:
 
     def open_select_user(self, title='Encontrar pessoa'):
         while True:
-            input_find = self.view.show_find_user(title)
+            def get_cpf_by_option_str(str_value):
+                splitted = str_value.split('(')
+                return splitted[1][:-1]
 
-            user = self.get_user_by_cpf(input_find['cpf'])
+            users = self.get_users()
+
+            users_raw = []
+            for key in users:
+                user = users[key]
+                users_raw.append(user.to_raw())
+
+            input_find = self.view.show_find_user(users_raw, title)
+            cpf = get_cpf_by_option_str(input_find['user'])
+
+            user = self.get_user_by_cpf(cpf)
 
             if (user):
                 return user

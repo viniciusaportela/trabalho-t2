@@ -148,11 +148,15 @@ class OrganizersController:
             return
 
     def open_select_organizer(self):
+        organizers = self.get_organizers()
+        organizers_raw = self.__organizers_to_raw(organizers)
+
         while True:
-            input_find = self.view.show_find_organizer()
+            input_find = self.view.show_find_organizer(organizers_raw)
             self.view.close()
 
-            organizer = self.get_organizer_by_cpf(input_find['cpf'])
+            cpf = self.__get_cpf_by_option_str(input_find['organizer'])
+            organizer = self.get_organizer_by_cpf(cpf)
 
             if (organizer):
                 return organizer
@@ -161,20 +165,36 @@ class OrganizersController:
 
     def open_select_many_organizers(self):
         organizers = []
-        raw_organizers = []
+        selected_organizers_raw = []
+
+        all_organizers = self.get_organizers()
+        all_organizers_raw = self.__organizers_to_raw(all_organizers)
 
         while True:
             button, values = self.view.show_find_many_organizers(
-                raw_organizers)
+                all_organizers_raw,
+                selected_organizers_raw)
             self.view.close()
 
             if (button == 'confirm'):
                 return organizers
 
-            organizer = self.get_organizer_by_cpf(values['cpf'])
+            cpf = self.__get_cpf_by_option_str(values['organizer'])
+            organizer = self.get_organizer_by_cpf(cpf)
 
             if (organizer):
                 organizers.append(organizer)
-                raw_organizers.append(organizer.to_raw())
+                selected_organizers_raw.append(organizer.to_raw())
             else:
                 self.view.show_message('Organizador não encontrado!')
+
+    def __organizers_to_raw(self, organizers):
+        organizers_raw = []
+        for key in organizers:
+            organizer = organizers[key]
+            organizers_raw.append(organizer.to_raw())
+        return organizers_raw
+
+    def __get_cpf_by_option_str(self, str_value):
+        splitted = str_value.split('(')
+        return splitted[1][:-1]

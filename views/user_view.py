@@ -156,29 +156,30 @@ class UserView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout, finalize=True)
 
-    def show_find_user(self, title='Encontrar pessoa'):
-        self.__mount_find_user_window(title)
+    def show_find_user(self, users_dict, title='Encontrar pessoa'):
+        self.__mount_find_user_window(title, users_dict)
 
-        while (True):
-            button, values = self.window.read()
-            self.close()
+        button, values = self.window.read()
+        self.close()
 
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
+        if (button is None or button == 'exit'):
+            raise(UserExitException)
 
-            if (values['cpf'].strip() == ''):
-                self.show_error_message('CPF não deve ser vazio')
-                continue
+        return values
 
-            return values
+    def __mount_find_user_window(self, title, users):
+        def mount_list():
+            arr = []
+            for user in users:
+                arr.append(user['name'] + ' (' + user['cpf'] + ')')
+            return arr
+        values = mount_list()
 
-    def __mount_find_user_window(self, title):
         layout = [
             [sg.Text(title)],
-            [sg.Text('', key='error_message')],
-            [sg.Text('CPF')],
-            [sg.Input(key='cpf')],
-            [sg.Submit('Procurar'), sg.Button(
+            [sg.Text('Usuário')],
+            [sg.Combo(values, default_value=values[0], key='user')],
+            [sg.Submit('Confirmar'), sg.Button(
                 'Cancelar', key='exit')],
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)

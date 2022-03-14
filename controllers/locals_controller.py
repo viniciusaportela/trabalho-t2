@@ -125,7 +125,7 @@ class LocalsController:
             if (len(locals.keys()) == 0):
                 self.view.show_message('Não há nenhum local cadastrado')
                 self.view.close()
-                raise EmptyStoreException()
+                raise EmptyStoreException('local')
 
             locals_raw = []
             for key in locals:

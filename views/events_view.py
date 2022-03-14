@@ -180,6 +180,7 @@ class EventsView(UIView):
 
         while (True):
             button, values = self.window.read()
+            self.close()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)
@@ -210,10 +211,21 @@ class EventsView(UIView):
     def __mount_participants_list(self, title, participants_assoc, hide_covid_proof=False):
         values = []
         headings = ['Nome', 'CPF', 'Aniversario',
-                    'Endereco']
+                    'Endereco', 'Entrada']
+
+        def create_participant_entrance_str():
+            res_str = ''
+
+            res_str += (participant_assoc['time_entrance']
+                        if participant_assoc['time_entrance'] else 'x')
+            res_str += ' -> '
+            res_str += (participant_assoc['time_leave']
+                        if participant_assoc['time_leave'] else 'x')
+
+            return res_str
 
         if (not hide_covid_proof):
-            headings.append('Tem comprovação Covid')
+            headings.append('Comprovação Covid')
 
         for participant_assoc in participants_assoc:
             arr = [
@@ -221,6 +233,7 @@ class EventsView(UIView):
                 participant_assoc['participant']['cpf'],
                 participant_assoc['participant']['birthday'],
                 participant_assoc['participant']['address'],
+                create_participant_entrance_str()
             ]
 
             if (not hide_covid_proof):
@@ -243,6 +256,7 @@ class EventsView(UIView):
             button, values = self.window.read()
 
             if (button is None or button == 'exit'):
+                self.close()
                 raise UserExitException()
 
             is_time_valid = validate_time(values['hour'])

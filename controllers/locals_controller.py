@@ -50,38 +50,52 @@ class LocalsController:
             return
 
     def open_register_local(self):
-        local_data = self.view.show_register_local()
-        address_data = self.__controllers_manager.address.view.show_register_address()
-        self.__controllers_manager.address.view.close()
+        try:
+            local_data = self.view.show_register_local()
+            self.view.close()
 
-        self.add_local(
-            local_data['name'],
-            address_data['cep'],
-            address_data['street'],
-            address_data['number'],
-            address_data['complement']
-        )
+            address_data = self.__controllers_manager.address.view.show_register_address()
+            self.__controllers_manager.address.view.close()
 
-        self.view.show_message('Local adicionado!')
+            self.add_local(
+                local_data['name'],
+                address_data['cep'],
+                address_data['street'],
+                address_data['number'],
+                address_data['complement']
+            )
+
+            self.view.show_message('Local adicionado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_edit_local(self):
-        local = self.open_select_local()
-        address_data = self.__controllers_manager.address.view.show_register_address()
+        try:
+            local = self.open_select_local()
+            address_data = self.__controllers_manager.address.view.show_register_address()
 
-        self.edit_local(
-            local.name,
-            address_data['cep'],
-            address_data['street'],
-            address_data['number'],
-            address_data['complement']
-        )
+            self.edit_local(
+                local.name,
+                address_data['cep'],
+                address_data['street'],
+                address_data['number'],
+                address_data['complement']
+            )
 
-        self.view.show_message('Local editado!')
+            self.view.show_message('Local editado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_remove_local(self):
-        local = self.open_select_local()
-        self.delete_local(local.name)
-        self.view.show_message('Local deletado!')
+        try:
+            local = self.open_select_local()
+            self.delete_local(local.name)
+            self.view.show_message('Local deletado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_local_list(self):
         locals = self.get_locals()
@@ -94,8 +108,12 @@ class LocalsController:
         self.view.show_locals_list(locals_data)
 
     def open_find_local(self):
-        local = self.open_select_local()
-        self.view.show_local(local.to_raw())
+        try:
+            local = self.open_select_local()
+            self.view.show_local(local.to_raw())
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_select_local(self):
         while True:

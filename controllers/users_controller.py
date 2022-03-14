@@ -83,8 +83,10 @@ class UsersController:
             address_data = None
 
             user_correct_data = False
+            first_loop = True
             while not user_correct_data:
-                user_data = self.view.show_user_register()
+                user_data = self.view.show_user_register(remount=first_loop)
+                first_loop = False
 
                 already_has_user = self.get_user_by_cpf(user_data['cpf'])
                 if (already_has_user != None):
@@ -96,7 +98,6 @@ class UsersController:
             self.view.close()
 
             address_data = self.__controllers_manager.address.view.show_register_address()
-
             self.__controllers_manager.address.view.close()
 
             self.add_user(
@@ -162,11 +163,15 @@ class UsersController:
             return
 
     def open_remove_user(self):
-        user = self.open_select_user()
+        try:
+            user = self.open_select_user()
 
-        self.remove_user(user.cpf)
+            self.remove_user(user.cpf)
 
-        self.view.show_message('Usuário deletado!')
+            self.view.show_message('Usuário deletado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_user_list(self):
         users = self.get_users()
@@ -181,14 +186,17 @@ class UsersController:
         self.view.close()
 
     def open_find_user(self):
-        user = self.open_select_user()
+        try:
+            user = self.open_select_user()
 
-        self.view.show_user_details(user.to_raw())
+            self.view.show_user_details(user.to_raw())
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_select_user(self, title='Encontrar pessoa'):
         while True:
             input_find = self.view.show_find_user(title)
-            self.view.close()
 
             user = self.get_user_by_cpf(input_find['cpf'])
 

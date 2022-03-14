@@ -57,8 +57,11 @@ class OrganizersController:
             organizer_data = None
 
             organizer_correct_data = False
+            first_loop = True
             while not organizer_correct_data:
-                organizer_data = self.view.show_organizer_register()
+                organizer_data = self.view.show_organizer_register(
+                    remount=first_loop)
+                first_loop = False
 
                 already_has_organizer = self.get_organizer_by_cpf(
                     organizer_data['cpf'])
@@ -115,11 +118,15 @@ class OrganizersController:
             return
 
     def open_remove_organizer(self):
-        organizer = self.open_select_organizer()
+        try:
+            organizer = self.open_select_organizer()
 
-        self.remove_organizer(organizer.cpf)
+            self.remove_organizer(organizer.cpf)
 
-        self.view.show_message('Organizador deletado!')
+            self.view.show_message('Organizador deletado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_organizers_list(self):
         organizers = self.get_organizers()
@@ -132,8 +139,12 @@ class OrganizersController:
         self.view.show_organizers_list(organizers_data)
 
     def open_find_organizer(self):
-        organizer = self.open_select_organizer()
-        self.view.show_organizer_details(organizer.to_raw())
+        try:
+            organizer = self.open_select_organizer()
+            self.view.show_organizer_details(organizer.to_raw())
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_select_organizer(self):
         while True:

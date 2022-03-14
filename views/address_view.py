@@ -59,6 +59,10 @@ class AddressView:
         while True:
             button, values = self.__window.read()
 
+            if (button is None or button == 'exit'):
+                self.close()
+                raise(UserExitException)
+
             if (values['cep'] == ''):
                 self.show_error_message('CEP não pode ser vazio')
                 continue
@@ -78,8 +82,5 @@ class AddressView:
             if (values['street'] == ''):
                 self.show_error_message('Rua não pode ser vazio')
                 continue
-
-            if (button is None or button == 'exit'):
-                raise(UserExitException)
 
             return values

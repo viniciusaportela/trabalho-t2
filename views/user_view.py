@@ -33,8 +33,9 @@ class UserView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_user_register(self, user_data=None):
-        self.__mount_user_register_window(user_data)
+    def show_user_register(self, user_data=None, remount=True):
+        if (remount):
+            self.__mount_user_register_window(user_data)
 
         while True:
             button, values = self.window.read()
@@ -159,6 +160,7 @@ class UserView(UIView):
 
         while (True):
             button, values = self.window.read()
+            self.close()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)

@@ -73,6 +73,7 @@ class LocalsView(UIView):
         self.__mount_find_local_window()
         while (True):
             button, values = self.window.read()
+            self.close()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)

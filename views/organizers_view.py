@@ -38,8 +38,9 @@ class OrganizersView(UIView):
         ]
         self.window = sg.Window(DEFAULT_TITLE, layout)
 
-    def show_organizer_register(self, organizer_data=None):
-        self.__mount_register_organizer_window(organizer_data)
+    def show_organizer_register(self, organizer_data=None, remount=True):
+        if (remount):
+            self.__mount_register_organizer_window(organizer_data)
 
         while True:
             button, values = self.window.read()
@@ -119,6 +120,7 @@ class OrganizersView(UIView):
 
         while (True):
             button, values = self.window.read()
+            self.close()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)
@@ -145,6 +147,7 @@ class OrganizersView(UIView):
 
         while (True):
             button, values = self.window.read()
+            self.close()
 
             if (button is None or button == 'exit'):
                 raise(UserExitException)

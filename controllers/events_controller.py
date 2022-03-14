@@ -104,36 +104,44 @@ class EventsController:
             return
 
     def open_add_participant_to_event(self, event):
-        current = date.now()
-        if (event.datetime <= current):
-            self.view.show_message('Esse evento já finalizou!')
+        try:
+            current = date.now()
+            if (event.datetime <= current):
+                self.view.show_message('Esse evento já finalizou!')
+                return
+
+            if (len(event.participants) >= event.max_participants):
+                self.view.show_message('Esse evento já esta cheio!')
+                return
+
+            user = self.__controllers_manager.user.open_select_user(
+                'Cadastrar Participante')
+
+            user_event = ParticipantEvent(event, user, None, None)
+            event.participants.append(user_event)
+
+            self.edit_event(
+                event.title,
+                event.max_participants,
+                event.participants,
+                event.local,
+                event.datetime,
+                event.organizers
+            )
+
+            self.view.show_message('Usuário adicionado ao evento!')
+        except UserExitException:
+            self.view.close()
             return
-
-        if (len(event.participants) >= event.max_participants):
-            self.view.show_message('Esse evento já esta cheio!')
-            return
-
-        user = self.__controllers_manager.user.open_select_user(
-            'Cadastrar Participante')
-
-        user_event = ParticipantEvent(event, user, None, None)
-        event.participants.append(user_event)
-
-        self.edit_event(
-            event.title,
-            event.max_participants,
-            event.participants,
-            event.local,
-            event.datetime,
-            event.organizers
-        )
-
-        self.view.show_message('Usuário adicionado ao evento!')
 
     def open_delete_event(self):
-        event = self.open_select_event()
-        self.remove_event(event.title)
-        self.view.show_message('Evento deletado!')
+        try:
+            event = self.open_select_event()
+            self.remove_event(event.title)
+            self.view.show_message('Evento deletado!')
+        except UserExitException:
+            self.view.close()
+            return
 
     def open_list_events(self):
         events = self.get_events()
@@ -146,9 +154,9 @@ class EventsController:
         self.view.show_events_list(events_data)
 
     def open_find_event(self):
-        event = self.open_select_event()
-
         try:
+            event = self.open_select_event()
+
             bindings = {
                 'add_participant': self.open_add_participant_to_event,
                 'list_participants': self.open_participants_list,
@@ -186,6 +194,15 @@ class EventsController:
                 if (time_leave):
                     participant_assoc.time_leave = time_leave
                 event.participants[index] = participant_assoc
+
+        self.edit_event(
+            event.title,
+            event.max_participants,
+            event.participants,
+            event.local,
+            event.datetime,
+            event.organizers
+        )
 
     def open_participants_with_covid_proof(self, event):
         participants = event.participants

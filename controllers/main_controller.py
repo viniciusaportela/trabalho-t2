@@ -28,6 +28,10 @@ class MainController:
         except Exception:
             self.view.close()
             controllers_manager.user.view.close()
+            controllers_manager.event.view.close()
+            controllers_manager.organizer.view.close()
+            controllers_manager.local.view.close()
+            controllers_manager.report.view.close()
             controllers_manager.address.view.close()
 
             self.view.show_message('Um erro inesperado ocorreu!')

@@ -269,6 +269,14 @@ class EventsView(UIView):
             hour = int(hour_raw_split[0])
             minute = int(hour_raw_split[1])
 
+            if (hour > 23 or hour < 0):
+                self.show_error_message('Hora deve estar entre 0 e 23')
+                continue
+
+            if (minute > 59 or minute < 0):
+                self.show_error_message('Minuto deve estar entre 0 e 59')
+                continue
+
             return hour, minute
 
     def __mount_show_get_hour(self, title):

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from core.exceptions.already_exists_exception import AlreadyExistsException
+from core.exceptions.empty_store_exception import EmptyStoreException
 from core.exceptions.not_exists_exception import NotExistsException
 from core.exceptions.user_exit_exception import UserExitException
 from core.persistance.participant_store import ParticipantStore
@@ -160,7 +161,7 @@ class UsersController:
             )
 
             self.view.show_message('Usuário editado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -171,7 +172,7 @@ class UsersController:
             self.remove_user(user.cpf)
 
             self.view.show_message('Usuário deletado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -192,7 +193,7 @@ class UsersController:
             user = self.open_select_user()
 
             self.view.show_user_details(user.to_raw())
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -203,6 +204,10 @@ class UsersController:
                 return splitted[1][:-1]
 
             users = self.get_users()
+            if (len(users.keys()) == 0):
+                self.view.show_message('Não há nenhum usuário cadastrado')
+                self.view.close()
+                raise EmptyStoreException('usuário')
 
             users_raw = []
             for key in users:

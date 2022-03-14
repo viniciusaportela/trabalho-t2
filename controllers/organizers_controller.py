@@ -1,3 +1,4 @@
+from core.exceptions.empty_store_exception import EmptyStoreException
 from core.persistance.organizer_store import OrganizerStore
 from models.organizer_model import Organizer
 from views.organizers_view import OrganizersView
@@ -114,7 +115,7 @@ class OrganizersController:
 
             self.view.close()
             self.view.show_message('Organizador editado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -125,7 +126,7 @@ class OrganizersController:
             self.remove_organizer(organizer.cpf)
 
             self.view.show_message('Organizador deletado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -143,12 +144,17 @@ class OrganizersController:
         try:
             organizer = self.open_select_organizer()
             self.view.show_organizer_details(organizer.to_raw())
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
     def open_select_organizer(self):
         organizers = self.get_organizers()
+        if (len(organizers.keys()) == 0):
+            self.view.show_message('Não há nenhum organizador cadastrado')
+            self.view.close()
+            raise EmptyStoreException('organizador')
+
         organizers_raw = self.__organizers_to_raw(organizers)
 
         while True:
@@ -168,6 +174,11 @@ class OrganizersController:
         selected_organizers_raw = []
 
         all_organizers = self.get_organizers()
+        if (len(all_organizers.keys()) == 0):
+            self.view.show_message('Não há nenhum organizador cadastrado')
+            self.view.close()
+            raise EmptyStoreException('organizador')
+
         all_organizers_raw = self.__organizers_to_raw(all_organizers)
 
         while True:

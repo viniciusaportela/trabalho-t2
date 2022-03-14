@@ -1,4 +1,6 @@
 from datetime import datetime as date, timedelta
+from re import I
+from core.exceptions.empty_store_exception import EmptyStoreException
 from core.persistance.event_store import EventStore
 from models.event_model import Event
 from models.participant_event_model import ParticipantEvent
@@ -78,7 +80,7 @@ class EventsController:
             )
 
             self.view.show_message('Evento adicionado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -103,7 +105,7 @@ class EventsController:
             )
 
             self.view.show_message('Evento editado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -134,7 +136,7 @@ class EventsController:
             )
 
             self.view.show_message('Usuário adicionado ao evento!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -143,7 +145,7 @@ class EventsController:
             event = self.open_select_event()
             self.remove_event(event.title)
             self.view.show_message('Evento deletado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -173,7 +175,7 @@ class EventsController:
             while True:
                 option = self.view.show_event_menu(event.to_raw())
                 bindings[option](event)
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -292,7 +294,7 @@ class EventsController:
                         'O horário de entrada deve ser posterior ou igual ao horário do evento')
 
             self.edit_participant(event, user.cpf, entrance_date)
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             return
 
     def open_register_leave(self, event):
@@ -339,7 +341,7 @@ class EventsController:
                         'O horário de saída deve ser posterior ou igual o horário de entrada')
 
             self.edit_participant(event, user.cpf, None, leave_date)
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             return
 
     def __user_is_in_event(self, user, event):
@@ -385,6 +387,12 @@ class EventsController:
     def open_select_event(self):
         while True:
             events = self.get_events()
+
+            if (len(events.keys()) == 0):
+                self.view.show_message('Não há nenhum evento cadastrado')
+                self.view.close()
+                raise EmptyStoreException('evento')
+
             events_raw = []
             for key in events:
                 event = events[key]

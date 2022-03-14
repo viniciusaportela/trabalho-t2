@@ -1,3 +1,4 @@
+from core.exceptions.empty_store_exception import EmptyStoreException
 from views.locals_view import LocalsView
 from models.local_model import Local
 from core.exceptions.user_exit_exception import UserExitException
@@ -86,7 +87,7 @@ class LocalsController:
             )
 
             self.view.show_message('Local editado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -95,7 +96,7 @@ class LocalsController:
             local = self.open_select_local()
             self.delete_local(local.name)
             self.view.show_message('Local deletado!')
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
@@ -113,13 +114,18 @@ class LocalsController:
         try:
             local = self.open_select_local()
             self.view.show_local(local.to_raw())
-        except UserExitException:
+        except (UserExitException, EmptyStoreException):
             self.view.close()
             return
 
     def open_select_local(self):
         while True:
             locals = self.get_locals()
+
+            if (len(locals.keys()) == 0):
+                self.view.show_message('Não há nenhum local cadastrado')
+                self.view.close()
+                raise EmptyStoreException()
 
             locals_raw = []
             for key in locals:
